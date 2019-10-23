@@ -1,0 +1,197 @@
+<template>
+  <!-- 地图组件容器 -->
+  <div class="map-detail">
+
+    <div class="gg-build-show grid-content" id="gg-build-show">
+
+      <div id="monitorPage" class="monitorPage">
+        <!-- 地图搜索按钮 -->
+        <Search 
+        	:bigScreen="bigScreen" 
+        	@sendDeviceSysFn="sendDeviceSysFn" 
+        	v-on:showBigScreen="showBigScreen" 
+        	v-on:changeShow="changeShow" 
+        	v-on:searchFloor="searchFloor">
+        </Search>
+        <!--平面图展示 -->
+        <Plantu ref="myplantu" class="gg-device-image" v-on:searchFloor="searchFloor" :floorObj="floorObj" :searchObj="searchObj" />
+        <!-- card -->
+        <!-- <InfoCard :floorObj="floorObj"></InfoCard> -->
+        <!-- floor 楼层 -->
+        <Floor ref="myFloor" v-on:changeFloorPic="changeFloorPic" :searchObj="searchObj" />
+				<!--<device-table></device-table>-->
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import Cookie from "js-cookie";
+import api from "~/config/http";
+// import InfoCard from "~/components/G2MapGroup/InfoCard";
+import Floor from "~/components/G2MapGroup/Floor";
+
+import Search from "~/components/G2MapGroup/Search";
+import Plantu from "~/components/G2MapGroup/Plantu";
+export default {
+  name: "g2mapDetail",
+  props: {
+    bigScreen: Boolean,
+    
+  },
+  components: {
+    // InfoCard,
+    Floor,
+    Search,
+    Plantu,
+
+  },
+  data() {
+    return {
+      floorObj: {},
+      searchObj: {}    
+    }
+  },
+  mounted() {
+  	
+  },
+  methods: {
+    sendDeviceSysFn(obj) {
+      this.searchFloor(obj);
+    },
+    showBigScreen: function (val) {
+      let build_sizeToggle = $(".gg-build-show")[0].style;
+      let build_sizeHeight = build_sizeToggle.height;
+      this.$emit('changeBigSmall', val)
+      // 全屏模式
+      if (val) {
+        build_sizeToggle.position = "absolute";
+        build_sizeToggle.width = "100%";
+        build_sizeToggle.height = "100%";
+        build_sizeToggle.top = "-10px";
+        this.initMapViewSize();
+      } else {
+        // 迷你模式
+        build_sizeToggle.position = "relative";
+        build_sizeToggle.width = "100%";
+        build_sizeToggle.height = "";
+        build_sizeToggle.top = 0;
+        this.initMapViewSize();
+      }
+    },
+    //是否显示楼栋楼层详情页面
+    changeShow: function (val) {
+      this.$emit('changeShowType', true)
+    },
+    changeFloorPic: function (obj) {
+      this.floorObj = obj;
+    },
+
+    searchFloor: function (params) {
+			console.log(params,"params")
+      var _this = this;
+      if (!params) {
+        return;
+      }
+      if(_this.$store.state.shBuildId !=params.buildId){
+         _this.$store.commit('updateShBuildId', params.buildId);
+        _this.$refs.myFloor.getFloorListByBuildId(params.buildId)
+        console.log("8888889999999",_this.$store.state.shBuildId)
+      }else{
+         api.post('/remoteApi/tool/deviceInfo/getDeviceListByCondition', params).then(data => {
+	        _this.changeFloorPic()
+	        _this.initMapViewSize();   
+	        //Plantu.methods.loadEquipmentPoint(data.data);
+	        
+	        if(!_this.$refs.myplantu.ZS.MONITOR.deviceLayer){
+	        	//创建元素图层
+			        var elementLayer = new _this.gs2.lys.ElementLayer();
+			        _this.$refs.myplantu.ZS.MONITOR.floor_g2map.addLayer(elementLayer);
+			        _this.$refs.myplantu.ZS.MONITOR.deviceLayer = elementLayer; //全局标点使用
+			
+			        //创建tooltip管理
+			        _this.$refs.myplantu.ZS.MONITOR.floor_tooltipWare = new _this.gs2.ext.TooltipWare({
+			          excluseLayerIds: elementLayer.getLayerId(),
+			          map: _this.$refs.myplantu.ZS.MONITOR.floor_g2map
+			        });
+	        }else{
+	        	 _this.$refs.myplantu.ZS.MONITOR.deviceLayer.clear();
+	        }
+	        
+	         _this.$refs.myplantu.ZS.MONITOR.floor_tooltipWare.clear();
+	        _this.$refs.myplantu.loadEquipmentPoint(data.data);
+	        //console.log(Plantu.data.ZS);
+	        _this.areaOpts = data.data;
+	        console.log("111111122222222",data.data)
+	        _this.$store.commit('updateShTableData', data.data);
+	      })
+      }
+//    debugger
+      return;
+      this.searchObj = val;
+    },
+    initMapViewSize: function () {
+      //调整地图size
+      var width = $(".gg-device-image")[0].offsetWidth;
+      var height = $(".gg-device-image")[0].offsetHeight;
+      this.$store.state.ZS.MONITOR.floor_g2map.setViewSize(width, height);
+    }
+
+  },
+  watch: {
+    '$store.state.pageWidB': function (newVal, oldVal) {
+      let that = this;
+      setTimeout(() => {
+        that.initMapViewSize();
+      }, 100);
+    },
+
+  }
+};
+
+</script>
+
+<style lang="scss" scoped>
+.map-detail {
+  /*buildshow*/
+	 height: 100%;
+  .bigScreen {
+    background: rgba(0, 0, 0, 0.5);
+    padding: 10px;
+    border-radius: 10px;
+  }
+
+  // 地图容器 外边框
+  .gg-build-show {
+    margin-top: 10px;
+    border-radius: 7px;
+    margin-left: 0;
+    width: 100%;
+    height: calc(100vh - 189px);
+    min-height: 487px;
+    background: #fff;
+    box-shadow: 0 0 10px rgba(37, 40, 41, 0.13);
+    z-index: 3;
+    position: relative;
+
+    // 地图图片部分
+    .gg-device-image {
+      height: 100%;
+      padding: 0;
+      background: #e9ebf2;
+    }
+  }
+
+  /* 筛选条件样式 */
+  .monitorPage {
+    height: 100%;
+  }
+}
+
+@media screen and (max-width: 1680px) {
+}
+
+@media screen and (max-width: 1440px) {
+}
+</style>
+

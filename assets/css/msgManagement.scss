@@ -1,0 +1,26 @@
+.grid-content {
+  padding: 0 0 0 20px;
+  box-sizing:border-box;
+}
+.notab {
+  height: calc(100vh - 78px);
+}
+.myTab{
+  height:calc(100% - 78px - 56px);
+}
+@media screen and (max-width: 1680px) {
+  .notab {
+      height: calc(100vh - 77px);
+    }
+    .myTab{
+      height:calc(100% - 74px - 56px);
+    }
+}
+@media screen and (max-width: 1440px) {
+  .notab {
+    height: calc(100vh - 77px);
+  }
+  .myTab{
+    height:calc(100% - 64px - 30px);
+  }
+}

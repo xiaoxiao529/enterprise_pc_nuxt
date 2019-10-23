@@ -1,0 +1,387 @@
+<template>
+  <div class="login-wrapper">
+    <!--        <div class="login-yunfu"></div>-->
+
+    <el-container>
+      <el-main>
+        <div class="main-center-img"></div>
+        <div class="login-text">
+          Copyright © 2018 辰安云服技术有限公司 All rights reserved
+          <a href="http://www.miitbeian.gov.cn/" target="_blank">皖ICP备18004330号-2</a>
+          <a href="http://www.ibw.cn/mianze.htm" target="_blank">免责声明</a>
+        </div>
+      </el-main>
+      <el-aside width="34%">
+        <el-form :model="ruleForm" :rules="rules" ref="ruleForm" class="demo-ruleForm login-right-center">
+          <div class="login-logo"></div>
+          <div class="login-head">电子档案管理系统</div>
+          <el-form-item prop="loginName`">
+            <el-input class="el-input-login" clearable type="text" v-model.trim="ruleForm.loginName" auto-complete="off" placeholder="用户名" @keyup.enter.native="submitForm('ruleForm')"></el-input>
+          </el-form-item>
+          <el-form-item prop="checkPass">
+            <el-input class="el-input-login" clearable type="password" v-model.trim="ruleForm.checkPass" auto-complete="off" placeholder="请输入密码" @keyup.enter.native="submitForm('ruleForm')"></el-input>
+          </el-form-item>
+          <el-form-item style="width:100%;">
+            <el-button id="btn" class="login-btns" type="primary" :loading="logining" @click="submitForm('ruleForm')">登录</el-button>
+          </el-form-item>
+        </el-form>
+      </el-aside>
+
+    </el-container>
+  </div>
+</template>
+
+<script>
+import axios from 'axios';
+import md5 from 'js-md5';
+import Cookie from 'js-cookie';
+import {
+  Message
+} from 'element-ui';
+import api from '~/config/http';
+import { mapMutations } from 'vuex'
+
+export default {
+  layout: "login",
+  data() {
+    return {
+      logining: false,
+      salt: "true",
+      userObj: "",
+      userAuthList: [],
+      ruleForm: {
+        loginName: 'dzda03',//hqwjbwclsc-tiyan-bsdyjadmin
+        checkPass: 'a123456'
+      },
+      rules: {
+        loginName: [{
+          required: true,
+          message: "false"
+        },],
+        checkPass: [{
+          required: true,
+          message: "false"
+        },]
+      },
+      checked: true,
+      dispFlag: false//判断进入集团首页标识
+    };
+  },
+  methods: {
+    submitForm(ev) {
+      api.removeGlobalVal("loginName");
+      api.removeGlobalVal("userObj");
+      let _this = this;
+      let auth = {}
+      this.$refs.ruleForm.validate((valid, errorMsg) => {
+        if (errorMsg.loginName || errorMsg.checkPass) {
+          this.$message.error('用户名或密码不能为空');
+        } else if (valid) {
+
+          this.logining = true; //登陆loading
+          let pwdOld = _this.ruleForm.checkPass + this.salt;
+          md5(pwdOld)
+          let hash = md5.create();
+          hash.update(pwdOld);
+          let pwd = hash.hex(pwdOld);
+
+          let serverUrl = '/remoteApi/tool/user/login';
+          let params = {
+            sysCode: "eRecord",
+            loginName: this.ruleForm.loginName,
+            password: pwd,
+            client: 'WEB'
+          };
+          api.post(serverUrl, params, 30000).then(obj => {
+            if (obj.code == 'success') {
+              api.post('/remoteApi/tool/user/findUserByUserId', {
+                userId: obj.data.id,
+              }, 3000).then(obj => {
+                if (obj.code == 'success') {
+                  var flag = false;
+                  _this.userAuthList = obj.data.userAuthList;
+                  _this.userAuthList.forEach(element => {
+                    if (element.sysCode == 'eRecord') {
+                      let showPage = 'PatrolPlan-FacilitiesInspection', lightMenu = '0';
+                      var roleData = element.authRoleList;
+                      if (roleData == null || roleData == "" || roleData.length == 0) {
+                        flag = false;
+                        showPage = 'AuthManage-UserManage';
+                        lightMenu = '0-0';
+                      }
+                      for (var index in roleData) {
+                        var rolObj = roleData[index];
+                        if (rolObj.roleId != api.fire_manager_role.qyaqzyRoleId) {
+                          flag = true;
+                          break;
+                        }
+                      }
+                      if (flag) {
+                        auth[api.fire_globalKey + "loginName"] = this.ruleForm.loginName;
+                        api.setGlobalVal('loginName', this.ruleForm.loginName);
+                        api.setGlobalVal("CmenuName", JSON.stringify({ lightMenu: lightMenu }));
+                        api.setGlobalVal("userId", obj.data.id);
+                        _this.$store.commit('update', this.ruleForm.loginName);
+
+                        // async/await 获取uesObj数据,并登陆index
+                        async function fechUseObj() {
+                          //console.log('-----fechUseObj-------:----------');
+                          let getUserMsgdata = await api.post("/remoteApi/tool/user/findUserByUserId", { userId: api.getGlobalVal("userId") });
+                          let usrObj = api.getGlobalVal("userObj");
+                          if (usrObj && usrObj.orgCode && usrObj.orgCode != getUserMsgdata.orgCode) {
+                            console.log("上级机构跳转时不重新保存用户信息main.html");
+                          } else {
+
+                            api.setGlobalVal('userObj', JSON.stringify(getUserMsgdata.data));
+
+                            _this.userObj = api.getGlobalVal('userObj');
+                            //获取用户是什么角色
+                            api.setGlobalVal('attribute', 'normal');
+
+                            _this.userAuthList = getUserMsgdata.data.userAuthList;
+
+                            _this.userAuthList.forEach(element => {
+                              if (element.sysCode == 'eRecord') {
+                                var roleData = element.authRoleList;
+                                _this.getRolesM(roleData);
+                              }
+                            });
+                          }
+                          if (!_this.dispFlag) {
+                            
+                            //登陆index
+                            _this.$router.push({
+                              name: showPage,
+                              params: {
+                                ref: 'login'
+                              }
+                            });
+                          }
+
+
+                        }
+                        fechUseObj();
+                      } else {
+                        Message.error('暂无权限访问');
+                      }
+                    } else {
+                      Message.error('暂无权限访问');
+                    }
+                  });
+                }
+              });
+              //失效时间  系统标识 用户标识
+            } else {
+              if (obj.message == 'loginName') {
+                Message.error('用户名不存在');
+                _this.logining = false;
+              } else if (obj.message == 'password') {
+                let errorCount = parseInt(obj.errCount);
+                if (errorCount == 0) {
+                  Message.error("密码错误，再次错误用户将被锁定!")
+                  _this.logining = false;
+                  return;
+                }
+                if (errorCount > 0 && errorCount < 5) {
+                  Message.error("密码错误，你还有" + result.errCount + "次机会!")
+                  _this.logining = false;
+                  return;
+                } else {
+                  Message.error("密码错误！")
+                  _this.logining = false;
+                  return;
+                }
+              } else if (obj.message == "lock") {
+                if (obj.type == "auto") {
+                  Message.error("密码错误次数过多,账号被锁定了！")
+                  _this.logining = false;
+                  return;
+                } else {
+                  Message.error("账号被锁定了！")
+                  _this.logining = false;
+                  return;
+                }
+              } else if (errorMessage == "activate") {
+                Message.error("用户名处于未激活状态！")
+                _this.logining = false;
+                return;
+              } else if (errorMessage == "nosystem") {
+                Message.error("当前用户所在的租户下无系统可访问！")
+                _this.logining = false;
+                return;
+              }
+            }
+
+          }).catch(function (err) {
+            //Message.error('请求失败');
+            _this.ruleForm.loginName = ""
+            _this.ruleForm.checkPass = ""
+            _this.logining = false;
+          })
+        } else {
+          return false;
+        }
+      });
+    },
+    getRolesM: function (getRoles) {
+      var _this = this;
+      if (getRoles && getRoles.code == 'success') {
+        for (var i in getRoles.data) {
+          if (_this.userObj.orgCode && _this.userObj.orgCode == i) {
+            api.setGlobalVal('attribute', 'linyi');
+          }
+        }
+      }
+    },
+    //注册vuex
+    ...mapMutations(['changeGroupFlag'])
+  },
+  mounted() {
+
+    window.onresize = () => {//重置window.onresize的return
+      return false;
+    }
+  }
+
+}
+
+</script>
+<style lang="scss" scoped>
+body {
+  font-size: 12px;
+}
+
+.login-wrapper {
+  background: url("../assets/img/login-bg-01.png") left top repeat;
+  .el-main {
+    height: 100vh;
+    background: url("../assets/img/login-left-bg.png") repeat;
+    .main-center-img {
+      width: 70%;
+      height: 64%;
+      margin: 18% 0 0 15%;
+      background: url("../assets/img/login-left-img.png") no-repeat center/100%
+        100%;
+    }
+    .login-text {
+      position: absolute;
+      bottom: 2.5%;
+      left: 2.5%;
+      font-size: 1.2rem;
+      color: #fff;
+      a {
+        color: #fff;
+      }
+    }
+  }
+  .el-aside {
+    background: url("../assets/img/login-bg-02.png") left bottom repeat-x;
+    .login-right-center {
+      width: 66%;
+      height: 55%;
+      margin: 24% 0 0 17%;
+      .login-logo {
+        width: 80%;
+        height: 10.5%;
+        margin: 0 0 30% 10%;
+        background: url("../assets/img/logo.png") no-repeat center/100% 100%;
+      }
+      .login-head {
+        font-size: 3rem;
+        font-weight: bold;
+        margin-bottom: 5%;
+      }
+      /deep/.el-input-login {
+        margin-bottom: 7%;
+        .el-input__inner {
+          height: 6rem !important;
+          line-height: 6rem !important;
+          border-radius: 0.4rem;
+          border: none;
+          background-color: #e7e7e7 !important;
+          color: #848484 !important;
+          font-size: 2rem;
+        }
+      }
+      .login-btns {
+        width: 100%;
+        border-radius: 0.4rem;
+        background: linear-gradient(to right, #1d75f2, #1babf8);
+        height: 5rem;
+        text-align: center;
+        font-size: 2rem;
+        letter-spacing: 0.5rem;
+      }
+    }
+  }
+}
+
+@media screen and (max-width: 1680px) {
+  .login-wrapper {
+    .el-aside {
+      .login-right-center {
+        /deep/.el-input-login {
+          .el-input__inner {
+            height: 5rem !important;
+            line-height: 5rem !important;
+            border-radius: 0.3rem;
+            font-size: 1.6rem;
+          }
+        }
+        .login-btns {
+          border-radius: 0.3rem;
+          height: 4.5rem;
+          font-size: 1.8rem;
+          letter-spacing: 0.3rem;
+        }
+      }
+    }
+  }
+}
+
+@media screen and (max-width: 1440px) {
+  .login-wrapper {
+    .el-aside {
+      .login-right-center {
+        /deep/.el-input-login {
+          .el-input__inner {
+            height: 4rem !important;
+            line-height: 4rem !important;
+            border-radius: 0.25rem;
+            font-size: 1.4rem;
+          }
+        }
+        .login-btns {
+          border-radius: 0.25rem;
+          height: 3.6rem;
+          font-size: 1.4rem;
+          letter-spacing: 0.25rem;
+        }
+      }
+    }
+  }
+}
+
+@media screen and (max-width: 1280px) {
+  .login-wrapper {
+    .el-aside {
+      .login-right-center {
+        /deep/.el-input-login {
+          .el-input__inner {
+            height: 3.5rem !important;
+            line-height: 3.5rem !important;
+            border-radius: 0.2rem;
+            font-size: 1.2rem;
+          }
+        }
+        .login-btns {
+          border-radius: 0.2rem;
+          height: 3rem;
+          font-size: 1.2rem;
+          letter-spacing: 0.25rem;
+        }
+      }
+    }
+  }
+}
+</style>

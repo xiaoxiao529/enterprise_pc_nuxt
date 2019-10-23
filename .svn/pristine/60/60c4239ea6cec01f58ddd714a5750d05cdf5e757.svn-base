@@ -1,0 +1,380 @@
+<template>
+    <div class="upload-content upload-content-big">
+        <el-scrollbar>
+        <el-form ref="form" :model="form" :label-position="labelPosition" label-width="100px" class="upload-content-from">
+            <el-row :gutter="10">
+                <el-col :span="12">
+                    <el-form-item label="所属运营中心:">
+                        <el-select v-model="orgListValue"
+                                   placeholder="请选择" filterable
+                                   @change="changeSubVal()"
+                                   @focus="getOrgListByUserId">
+                            <el-option
+                                    v-for="(item,index) in orgList"
+                                    :key="index"
+                                    :label="item.label"
+                                    :value="item.value"
+                            >
+                            </el-option>
+                        </el-select>
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                    <el-form-item label="企业名称:">
+                        <el-select v-model="allUnitListVal"
+                                   placeholder="请选择"
+                                   @focus="getAllUnit" filterable
+                                   @change="changeUnitVal()"
+                                   :loading="loading">
+                            <el-option
+                                    v-for="(item,index) in allUnitList"
+                                    :key="index"
+                                    :label="item.label"
+                                    :value="item.value"
+                            >
+                            </el-option>
+                        </el-select>
+                    </el-form-item>
+                </el-col>
+            </el-row>
+            <el-row>
+                <el-col :span="23">
+                    <el-form-item label="上传文件:">
+                        <el-upload
+                                class="upload-demo"
+                                drag
+                                multiple
+                                action="/remoteApi/tool/record/uploadfile"
+                                accept="multipart/form-data"
+                                :data="uploadData"
+                                :on-preview="handlePreview"
+                                :on-remove="handleRemove"
+                                :file-list="form.fileList"
+                                :on-error="handleAvatarError"
+                                :on-success="handleAvatarSuccess"
+                                :before-upload="beforeAvatarUpload"
+                                :auto-upload="true"
+                                :show-file-list="showFileFlag"
+                            >
+                            <i class="el-icon-upload"></i>
+                            <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
+                        </el-upload>
+                    </el-form-item>
+                </el-col>
+            </el-row>
+
+            <el-row :gutter="10">
+                <el-col :span="12">
+                    <el-form-item label="状态类型:">
+                        <el-select v-model="form.setState" placeholder="请选择状态类型" filterable>
+                            <el-option
+                                    v-for="item in oprFlagList"
+                                    :key="item.id"
+                                    :label="item.label"
+                                    :value="item.value"
+                            >
+                            </el-option>
+                        </el-select>
+                    </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                    <el-form-item label="优先级:">
+                        <el-select v-model="form.priority" placeholder="请选择优先级">
+                            <el-option
+                                    v-for="item in priorityList"
+                                    :key="item.id"
+                                    :label="item.label"
+                                    :value="item.value"
+                            >
+                            </el-option>
+                        </el-select>
+                    </el-form-item>
+                </el-col>
+            </el-row>
+            <el-row>
+                <el-col :span="23">
+                    <el-form-item label="任务描述:">
+                        <el-input type="textarea" v-model="form.remarks"></el-input>
+                    </el-form-item>
+                </el-col>
+            </el-row>
+            <el-form-item label="">
+                <el-button type="primary" @click="onSubmit">新增保存</el-button>
+                <el-button @click="dataDigEmp('newAdd')">重置</el-button>
+            </el-form-item>
+        </el-form>
+            <div style="height: 40px;"></div>
+        </el-scrollbar>
+    </div>
+</template>
+<script>
+    import api from '~/config/http';
+    export default {
+        props:['uploadDataVal'],
+        data() {
+            return{
+                labelPosition:'top',
+                form: {
+                    fileList:[],
+                    setState:null,
+                    priority:2,
+                    selectedOptions: [],
+                    remarks:''
+                },
+                orgList:[],
+                orgListValue: '',
+                allUnitList:[],
+                allUnitListVal: '',
+                dialogFormVisible: false,
+                oFile: '',
+                uploadData:{
+                    operationId:"",
+                    unitId:''
+                },
+                callbackUrl:[],
+                dataOptions: [{
+                    value: '2',
+                    label: '项目',
+                    disabled: true
+                }],
+                props: {
+                    value: 'label',
+                    children: 'cities'
+                },
+                priorityList:[{
+                    id:'0001',
+                    value: 1,
+                    label: '紧急'
+                }, {
+                    id:'0002',
+                    value: 2,
+                    label: '普通'
+                }],
+                oprFlagList:[{
+                    id:'00001',
+                    value: 1,
+                    label: '新建'
+                }, {
+                    id:'00002',
+                    value: 2,
+                    label: '修改'
+                }, {
+                    id:'00003',
+                    value: 3,
+                    label: '删除'
+                }, {
+                    id:'00004',
+                    value: 4,
+                    label: '补录'
+                }],
+                oprFlagListVal:'',
+                loading: false,
+                showFileFlag:true
+
+            }
+        },
+        created(){
+
+        },
+        mounted() {
+            this.getOrgListByUserId();
+        },
+        methods:{
+
+            //选择运营中心时候的操作
+            changeSubVal(){
+                this.allUnitListVal = null;
+            },
+            //选择企业的时候
+            changeUnitVal(){
+                var that = this;
+                return that.orgListValue = that.allUnitList.find(item=>item.value==that.allUnitListVal).subCenterCode;
+            },
+            //根据用户id,系统编码获取组织机构列表
+            getOrgListByUserId() {
+                var that = this;
+                api.post('/remoteApi/tool/org/findOrgListByRole', {
+                    userId: api.getGlobalVal("userObj").id,
+                    roleName: api.getGlobalVal('userObj').userAuthList[0].authRoleList[0].roleName
+                }, 5000).then(res => {
+                    if (res.code === "success") {
+                        if (res.data&&res.data.length>0){
+                            that.orgList=[];
+                            res.data.map(function(item){
+                                that.orgList.push({
+                                    label: item.orgName,
+                                    value: item.orgCode
+                                })
+                            })
+                        }
+                    }else{
+                        this.$message({
+                            type: 'warning',
+                            message: "错误"
+                        });
+                    }
+                }).catch(err => {
+                    this.$message({
+                        type: 'warning',
+                        message: err
+                    });
+                });
+            },
+            //获取所有企业
+            getAllUnit() {
+                var that = this;
+                that.allUnitList = [];
+                this.loading = true;
+                api.post('/remoteApi/tool/unit/findAllUnit', {
+                    subCenterCode: this.orgListValue
+                }, 5000).then(res => {
+                    if (res.code === "success") {
+                        this.loading = false;
+                        if (res.data&&res.data.length>0){
+                            that.allUnitList=[];
+                            res.data.map(function(item){
+                                that.allUnitList.push({
+                                    label: item.label,
+                                    value: item.value,
+                                    subCenterCode:item.subCenterCode
+                                })
+                            })
+
+                        }
+
+                    }
+                }).catch(err => {
+                    this.$message({
+                        type: 'warning',
+                        message: err
+                    });
+                });
+            },
+
+            dataDigEmp(typeVal){
+                if( this.uploadDataVal.type === typeVal){
+                    this.form.fileList=[];
+                    this.form.setState='';
+                    this.form.priority=2,
+                        this.form.selectedOptions =[];
+                    this.form.remarks='';
+                    this.orgListValue= '';
+                    this.allUnitListVal= '';
+                }
+            },
+
+            // 文件列表移除文件时的钩子
+            handleRemove(file, fileList) {
+                for(let i = 0; i< fileList.length; i++){
+                    this.callbackUrl.push(fileList[i].response.data.url)
+                }
+                console.log(this.callbackUrl)
+            },
+            //预览
+            handlePreview(file) {
+                console.log(file);
+            },
+            //新增提交
+            onSubmit() {
+                var that = this;
+                if (!that.orgListValue) {
+                    this.$message({
+                        type: 'warning',
+                        message: "请选择所属运营中心"
+                    });
+                    return;
+                }
+                if (!that.allUnitListVal) {
+                    this.$message({
+                        type: 'warning',
+                        message: "请选择所属企业"
+                    });
+                    return;
+                }
+                if (!that.form.setState) {
+                    this.$message({
+                        type: 'warning',
+                        message: "状态类型不能为空"
+                    });
+                    return;
+                }
+                // if (that.form.remarks) {
+                //     that.$message({
+                //         type: 'warning',
+                //         message: "任务描述不能为空"
+                //     });
+                //     return;
+                // }
+                api.post("/remoteApi/tool/recordTrial/addRecordTrial", {
+                    userId:api.getGlobalVal("userObj").id,//上传人
+                    subCenterCode:that.orgListValue,//运营中心Id
+                    unitId:that.allUnitListVal,//单位id
+                    describes:that.form.remarks,//描述信息
+                    priority:that.form.priority,//优先级
+                    fileUrls:that.callbackUrl.join(','),//上传地址
+                    operFlag:that.form.setState,//上传类型
+                }).then(res => {
+                    if (res.code == "success") {
+                        this.$message.success('保存成功');
+                        this.dataDigEmp('newAdd');
+                        this.$emit("saveHandel")
+                    }else{
+                        this.$message.error('保存失败');
+                    }
+                });
+            },
+
+
+            //上传成功
+            handleAvatarSuccess(res, file) {
+                const that = this;
+                if(res.code == 'success'){
+                    that.callbackUrl.push(res.data.url);
+                    that.showFileFlag = true
+                }else{
+                    that.$message({
+                        message: '上传文件失败',
+                        type: 'error'
+                    });
+                    that.showFileFlag = false
+                }
+            },
+            //上传失败
+            handleAvatarError(res, file, fileList) {
+                this.$message({
+                    message: '上传文件失败',
+                    type: 'error'
+                });
+            },
+            beforeAvatarUpload(file){
+                this.uploadData.operationId = this.orgListValue;
+                this.uploadData.unitId = this.allUnitListVal;
+                if (!this.uploadData.operationId) {
+                    this.$message.error('请选择运营中心')
+                    return false;
+                }
+                if (!this.uploadData.unitId) {
+                    this.$message.error('请选择企业')
+                    return false;
+                }
+            },
+        }
+    }
+</script>
+<style lang="scss" scoped>
+    .upload-content{
+        height:auto;
+        width:100%;
+        background:#fff;
+        text-align: left;
+        padding: 5px 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        height: 520px;
+        .el-upload-dragger{
+            width: 430px !important;
+        }
+    }
+
+</style>
+

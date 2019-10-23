@@ -1,0 +1,14 @@
+{
+  "presets": [
+    ["env", {
+      //如果不设置 targets 属性，babel-preset-env 和 babel-preset-latest 效果相同
+      "targets": {
+        //转码后支持chrome 52
+        "chrome": 52,
+        //转码后支持的浏览器：市场份额>1%, 最新2个版本，ie版本大于8
+        "browsers": ["> 1%", "last 2 versions", "not ie <= 8"]
+      }
+    }]
+  ],
+  "compact": false
+}

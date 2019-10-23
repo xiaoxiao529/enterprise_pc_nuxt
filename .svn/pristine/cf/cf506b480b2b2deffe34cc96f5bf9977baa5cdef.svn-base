@@ -1,0 +1,445 @@
+<!-- card -->
+<template>
+  <!-- 地图组件容器 -->
+  <div>
+    <div class="floor-nav">
+      <a :class="['icon-lift', 'icon-lift-up', noalow]" @click="upScroll('up')"><i class="ggicon-arrowTop"></i></a>
+      <div class="floor-di">
+        <div class="floor-ul-div">
+          <ul id="scrollUl" class="scrollUl" ref="scrollUl">
+            <li v-for="(item,index) in floorArr" :class="[index==curIndex?'active':'',item.alarmState != 0?'is-error':'',item.troubleType != 0 && item.alarmState == 0?'is-warning':'']" :key="index" @click="changeFloor(index,item)"> <a href="javascript:;"><span class="gg-floor-circle" :title="item.floorName">{{item.floorName}}</span></a></li>
+          </ul>
+        </div>
+      </div>
+      <a :class="['icon-lift', 'icon-lift-down', botNoalow]" @click="upScroll('down')"><i class="ggicon-arrowBottom"></i></a>
+    </div>
+  </div>
+</template>
+<script>
+  import api from "~/config/http";
+  export default {
+    props: {
+      searchObj: Object
+    },
+    data() {
+      return {
+        userObj: api.getGlobalVal('userObj'),
+        ulI: 0,
+        floorArr: [],
+        curIndex: 0,
+        noalow: 'alow',
+        botNoalow: 'alow',
+        currentBuild: this.$store.state.shBuildId,
+        currentFloor: this.$store.state.ZS.MONITOR.currentFloor,
+        statusClass: '',
+        curFloor: '',
+        scrollUlOffsetHeight: 0, //this.$refs.scrollUl.offsetHeight
+      };
+    },
+    mounted() {
+      this.getFloorListByBuildId(this.currentBuild);
+    },
+    updated() {
+      // dom 加载完成执行高度赋值
+      this.scrollUlOffsetHeight = this.$refs.scrollUl;;
+    },
+    methods: {
+      upScroll: function (direction) {
+        let ulHei = $("#scrollUl").height();
+        let di = $(".floor-di").height();
+        let max = Math.round(ulHei / (di));
+        if (ulHei < di) {
+          this.botNoalow = 'noalow'
+          this.noalow = 'noalow'
+        } else {
+          var step = di - 80;
+          this.botNoalow = 'alow'
+        }
+        if (direction == 'up' && this.noalow == 'alow') {
+          if (this.ulI <= 0) {
+            this.ulI = 0;
+            this.noalow = 'noalow'
+          } else {
+            this.ulI--;
+          }
+          $('#scrollUl').css({
+            'transform': 'translateY(' + (-step) * this.ulI + 'px)'
+          })
+        } else if (direction == 'down' && this.botNoalow == 'alow') {
+          if (this.ulI >= max) {
+            this.ulI = max;
+            this.botNoalow = 'noalow'
+          } else {
+            this.ulI++;
+          }
+          this.noalow = 'alow'
+          $('#scrollUl').css({
+            'transform': 'translateY(' + (-step) * this.ulI + 'px)'
+          })
+        }
+      },
+      /**
+       * 根据建筑id获取建筑楼层列表
+       * @param enterpriseId 企业id
+       * @param buildId 建筑id
+       * @param callback
+       * @private
+       */
+      getFloorListByBuildId: function (buildId, callback) {
+        var unitId = this.$store.state.shUnitId;
+        
+        var _this = this;
+        //this.$store.commit('updateShUnitId', this.$route.params.unitId);
+        if(buildId !=''){
+        	console.log(buildId,"    buildId11")
+          var that = this;
+            api.post('/remoteApi/tool/floor/getFloorInfoByUnitIdAndBuildId', {
+              unitId:unitId,
+              buildId:buildId
+            }).then(data => {
+              var data = data['data'] || [];
+              var firstFloor = null;
+              var alarmFloor = null;
+              var troubleFloor = null;
+              var flag = true,
+                      ff = true;
+              var floorData = {};
+              that.curIndex = 0;
+              for (var key in data) {
+                var floor = data[key];
+                if (!that.$store.state.updateFromStr && ff) {
+                  floorData = data[key];
+                  ff = false;
+                }
+                // 第一层楼
+                if (firstFloor == null) {
+                  firstFloor = floor.floorId;
+                }
+                // 当前楼层
+                if (alarmFloor == null && floor.alarmState != 0) {
+                  if (flag) {
+                    that.curIndex = key;
+                    floorData = data[key];
+                  } else {
+                    that.curIndex = 0;
+                    flag = false;
+                  }
+                  console.log(this.currentFloor + '------')
+                  //if(floor.floorId == this.currentFloor){
+                  alarmFloor = floor.floorId;
+                  // }else{
+                  //   alarmFloor = this.currentFloor;
+                  //  }
+
+                }
+                if (troubleFloor == null && floor.troubleType != 0) {
+                  troubleFloor = floor.floorId;
+                }
+              }
+							
+							$('#scrollUl').css({
+		            'transform': 'translateY(0px)'
+		          })
+							
+              if (that.currentFloor && that.$store.state.updateFromStr) {
+
+                that.curFloor = that.curFloor ? that.curFloor : that.currentFloor;
+                console.log('------0')
+              } else {
+                if (alarmFloor) {
+                  console.log('------1')
+                  that.curFloor = alarmFloor;
+                } else if (troubleFloor && !alarmFloor) {
+                  console.log('------2')
+                  that.curFloor = troubleFloor;
+                } else {
+                  console.log('------3')
+                  that.curFloor = firstFloor;
+                }
+              }
+              that.floorArr = data;
+              var floorIdData = data[0]?data[0].floorId:"";
+              var floorAreaImgData = data[0]?data[0].floorAreaImg:"";
+              that.$store.commit('updateZSCurrentFloor',floorIdData);
+              that.$store.commit('updateZSPicUrl', floorData && JSON.stringify(floorData) != '{}' ? floorData.floorAreaImg : floorAreaImgData);
+              that.$store.commit('updateZSCurrentFloorObj', Math.random());
+              that.$emit("changeFloorPic", floorData && JSON.stringify(floorData) != '{}' ? floorData : data[0]);
+              //callback(data);
+              //that.$store.commit('updateShFloorId', data[0].floorId);
+            })
+        }else{
+           api.post("/remoteApi/tool/build/findBuildByUnitId", { unitId: unitId }).then(data => {
+           	
+          if(data.data){
+            var buildId = data.data[0].buildId;
+            console.log(buildId,"    buildId22")
+            _this.$store.commit('updateShBuildId', buildId);
+            var that = this;
+            api.post('/remoteApi/tool/floor/getFloorInfoByUnitIdAndBuildId', {
+              unitId:unitId,
+              buildId:buildId
+            }).then(data => {
+
+              var data = data['data'] || [];
+              var firstFloor = null;
+              var alarmFloor = null;
+              var troubleFloor = null;
+              var flag = true,
+                      ff = true;
+              var floorData = {};
+              that.curIndex = 0;
+              for (var key in data) {
+                var floor = data[key];
+                if (!that.$store.state.updateFromStr && ff) {
+                  floorData = data[key];
+                  ff = false;
+                }
+                // 第一层楼
+                if (firstFloor == null) {
+                  firstFloor = floor.floorId;
+                }
+                // 当前楼层
+                if (alarmFloor == null && floor.alarmState != 0) {
+                  if (flag) {
+                    that.curIndex = key;
+                    floorData = data[key];
+                  } else {
+                    that.curIndex = 0;
+                    flag = false;
+                  }
+                  console.log(this.currentFloor + '------')
+                  //if(floor.floorId == this.currentFloor){
+                  alarmFloor = floor.floorId;
+                  // }else{
+                  //   alarmFloor = this.currentFloor;
+                  //  }
+
+                }
+                if (troubleFloor == null && floor.troubleType != 0) {
+                  troubleFloor = floor.floorId;
+                }
+              }
+
+              if (that.currentFloor && that.$store.state.updateFromStr) {
+
+                that.curFloor = that.curFloor ? that.curFloor : that.currentFloor;
+                console.log('------0')
+              } else {
+                if (alarmFloor) {
+                  console.log('------1')
+                  that.curFloor = alarmFloor;
+                } else if (troubleFloor && !alarmFloor) {
+                  console.log('------2')
+                  that.curFloor = troubleFloor;
+                } else {
+                  console.log('------3')
+                  that.curFloor = firstFloor;
+                }
+              }
+              that.floorArr = data;
+              var floorIdData = data[0]?data[0].floorId:"";
+              var floorAreaImgData = data[0]?data[0].floorAreaImg:"";
+              that.$store.commit('updateZSCurrentFloor',floorIdData);
+              that.$store.commit('updateZSPicUrl', floorData && JSON.stringify(floorData) != '{}' ? floorData.floorAreaImg : floorAreaImgData);
+              that.$store.commit('updateZSCurrentFloorObj', Math.random());
+              that.$emit("changeFloorPic", floorData && JSON.stringify(floorData) != '{}' ? floorData : data[0]);
+              //callback(data);
+              //that.$store.commit('updateShFloorId', data[0].floorId);
+            })
+          }
+        })
+        }     
+      },
+      changeFloor(index, item) {
+      	console.log(index,item,"changeFloor")
+        this.curIndex = index;
+        this.$store.commit('updateZSPicUrl', item.floorAreaImg);
+        this.$store.commit('updateZSCurrentFloor', item.floorId);
+        this.$store.commit('updateZSCurrentFloorObj', Math.random());
+        this.$emit("changeFloorPic", item)
+      }
+
+
+    },
+    watch: {
+      searchObj: function (newVal, oldVal) {
+        this.getFloorListByBuildId(newVal.buildId);
+        this.scrollUlOffsetHeight = this.$refs.scrollUl.offsetHeight + 1 - 1;
+      },
+      scrollUlOffsetHeight: function (newVal, oldVal) {
+        newVal = newVal.offsetHeight
+        if (newVal && newVal > 0) {
+          $('#scrollUl').css({
+            'transform': 'translateY(' + (-40) * this.curIndex + 'px)'
+          })
+        }
+
+      }
+    }
+  };
+
+</script>
+<style scoped lang="scss">
+  /* floor */
+  /* 楼层 */
+  .floor-nav {
+    position: absolute;
+    right: 20px;
+    top: 130px;
+    width: 100px;
+    // height: 50%;
+    text-align: center;
+
+    .scrollUl {
+      transition: all 1s;
+    }
+
+    .icon-lift {
+      display: inline-block;
+      line-height: 30px;
+      cursor: pointer;
+      font-size: 20px;
+      width: 46px;
+      display: inline-block;
+      padding: 5px 1px;
+      background: #fff;
+      border: 2px solid #4777e7;
+    }
+
+    .icon-lift-up {
+      border-bottom: none;
+    }
+
+    .icon-lift-down {
+      border-top: none;
+      margin-top: -8px !important;
+    }
+
+    .alow {
+      color: rgb(60, 141, 188);
+    }
+
+    .noalow {
+      color: rgb(204, 204, 204);
+    }
+
+    .floor-di {
+      height: 320px;
+      overflow: hidden;
+
+      ul {
+        li {
+          line-height: 36px;
+          border-radius: 50%;
+          position: relative;
+
+          a {
+            display: inline-block;
+            height: 100%;
+            width: 46px;
+            //height: 42px;
+            line-height: 40px;
+
+            background: #fff;
+          }
+        }
+
+        li.active {
+          background: none !important;
+          border: none !important;
+        }
+
+        li:hover a,
+        li.active a {
+          span {
+            color: #fff;
+            display: inline-block;
+            width: 36px;
+            height: 36px;
+            line-height: 36px;
+            background: #4777e7;
+            border-radius: 50%;
+          }
+        }
+
+        li.active:before {
+          content: "";
+          position: absolute;
+          left: 5px;
+          top: 50%;
+          display: block;
+          border: 0.6rem solid transparent;
+          border-left-color: #4777e7;
+          margin-top: -0.4rem;
+        }
+
+        li.is-error.active:before {
+          content: "";
+          position: absolute;
+          left: 5px;
+          top: 50%;
+          display: block;
+          border: none;
+          border-left-color: #4777e7;
+          margin-top: -0.4rem;
+        }
+
+        li.is-warning.active:before {
+          content: "";
+          position: absolute;
+          left: 5px;
+          top: 50%;
+          display: block;
+          border: none;
+          border-left-color: #4777e7;
+          margin-top: -0.4rem;
+        }
+
+        li.is-error {
+          background: url(../../assets/img/floor-alarm.png) no-repeat 1px 12px !important;
+
+          span {
+            color: red;
+          }
+        }
+
+        li.is-warning {
+          background: url(../../assets/img/floor-warn.png) no-repeat 1px 12px !important;
+
+          span {
+            display: inline-block;
+            width: 36px;
+            height: 36px;
+            line-height: 36px;
+            border-radius: 50%;
+            color: #ff9204;
+            background: #ffeed8;
+          }
+        }
+      }
+    }
+  }
+
+  .floor-nav:before {
+    border-left: 2px solid #4777e7;
+    border-right: 2px solid #4777e7;
+    position: absolute;
+    content: "";
+    top: 40px;
+    left: 24px;
+    right: 24px;
+    bottom: 40px;
+    border-left: 2px solid #386fc2;
+    border-right: 2px solid #386fc2;
+    //margin:40px 0;
+    background: #fff;
+  }
+
+  @media screen and (max-width: 1440px) {
+    .floor-nav {
+      .floor-di {
+        height: 290px;
+      }
+    }
+  }
+</style>

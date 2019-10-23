@@ -1,0 +1,148 @@
+<template>
+  <div class="DeviceTable" ref="DeviceTable">
+    <el-table :data="tableData.slice((currentPage-1)*pagesize,currentPage*pagesize)" border>
+      <el-table-column prop="deviceTypeName" label="设备名称" :show-overflow-tooltip="true" width></el-table-column>
+      <el-table-column prop="laLoopPoint" label="回路-点位" width :show-overflow-tooltip="true"></el-table-column>
+      <el-table-column prop="twoCode" :show-overflow-tooltip="true" label="二次码"></el-table-column>
+      <el-table-column fixed="right" label="操作">
+        <template slot-scope="scope">
+          <el-button @click="handleDelete(scope.row)" type="text" size="small">标点</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+    <div class="block">
+      <el-pagination
+        small
+        background
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        :current-page="currentPage"
+        :page-size="pagesize"
+        layout="prev, pager, next"
+        :total="tableData.length"
+      ></el-pagination>
+    </div>
+    <div class="arrow" @click="foldHandle">
+      <i class="el-icon-s-unfold"></i>
+    </div>
+  </div>
+</template>
+
+<script>
+import api from "~/config/http";
+export default {
+  data() {
+    return {
+      tableData: [],
+      currentPage: 1, //初始页
+      pagesize: 5, //    每页的数据
+      onOff: true
+    };
+  },
+  methods: {
+    handleDelete(row) {
+      console.log(row);
+    },
+    // 初始页currentPage、初始每页数据数pagesize和数据data
+    handleSizeChange: function(size) {
+      this.pagesize = size;
+      console.log(this.pagesize); //每页下拉显示数据
+    },
+    handleCurrentChange: function(currentPage) {
+      this.currentPage = currentPage;
+      console.log(this.currentPage); //点击第几页
+    },
+    foldHandle() {
+      this.$refs.DeviceTable.className = "DeviceTable";
+      if (this.onOff) {
+        this.$refs.DeviceTable.className = "DeviceTable move-in";
+      } else {
+        this.$refs.DeviceTable.className = "DeviceTable move-out";
+      }
+      this.onOff = !this.onOff;
+    }
+  },
+  mounted() {
+    //this.tableData.push()
+    var unitId = this.$store.state.shUnitId;
+    var buildId = this.$store.state.shBuildId;
+    var floorId = this.$store.state.shFloorId;
+    var deviceTypeId =
+      deviceTypeId || this.$store.state.ZS.MONITOR.deviceQueryType;
+    console.log(unitId, "unitId,buildId,floorId   DeviceTable");
+    console.log(buildId, "unitId,buildId,floorId   DeviceTable");
+    console.log(floorId, "unitId,buildId,floorId   DeviceTable");
+    api
+      .post("/remoteApi/tool/deviceInfo/getDeviceListByCondition", {
+        unitId: unitId,
+        floorId: floorId,
+        buildId: buildId,
+        deviceTypeIds: deviceTypeId
+      })
+      .then(response => {
+        var data = response.data;
+        console.log(data);
+        for (var i = 0; i < data.length; i++) {
+          data[i].position = data[i].latitude + "/" + data[i].longitude;
+          this.tableData.push(data[i]);
+        }
+      });
+  }
+};
+</script>
+
+// <style lang="scss"  scope>
+// .el-table th,
+// .el-table tr {
+//   font-size: 12px;
+// }
+// .el-table .cell,
+// .el-table th div,
+// .el-table--border td:first-child .cell,
+// .el-table--border th:first-child .cell {
+//   padding-left: 0;
+// }
+// .DeviceTable {
+//   background: #fff;
+//   padding-bottom: 5px;
+//   width: 350px;
+//   position: absolute;
+//   left: 0;
+//   top: 60px;
+//   z-index: 1000;
+
+//   .arrow {
+//     font-size: 26px;
+//     position: absolute;
+//     right: 5px;
+//     z-index: 10;
+//     top: 14px;
+//     cursor: pointer;
+//   }
+// }
+// .move-in {
+//   animation: move-in 1s alternate;
+//   animation-fill-mode: forwards;
+// }
+// @keyframes move-in {
+//   from {
+//     left: 0;
+//   }
+//   to {
+//     left: -330px;
+//   }
+// }
+// .move-out {
+//   animation: move-out 1s alternate;
+//   animation-fill-mode: forwards;
+// }
+// @keyframes move-out {
+//   from {
+//     left: -330px;
+//   }
+//   to {
+//     left: 0;
+//   }
+// }
+//
+</style>

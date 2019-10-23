@@ -1,0 +1,518 @@
+<!-- 消控室  -->
+<template>
+  <div class="storied-suilding-wrapper">
+    <div>
+      <el-form
+        label-position="left"
+        inline
+        :model="formInline"
+        ref="formInline"
+        class="demo-table-expand"
+      >
+        <el-form-item label="楼栋名称:" prop="buildId">
+          <el-select
+            v-model.trim="formInline.buildId"
+            placeholder="楼栋信息"
+            @change="getFloorInfo(formInline.buildId)"
+          >
+            <el-option
+              v-for="item in buildList"
+              :key="item.buildId"
+              :label="item.buildName"
+              :value="item.buildId"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="楼层名称:" prop="floorId">
+          <el-select v-model.trim="formInline.floorId" placeholder="楼层信息">
+            <el-option
+              v-for="item in floorList"
+              :key="item.floorId"
+              :label="item.floorName"
+              :value="item.floorId"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="消控室名称:" prop="firecontrolroomName">
+          <el-input v-model="formInline.firecontrolroomName"></el-input>
+        </el-form-item>
+        <el-form-item label class="t-right" style="width:25%">
+          <el-button @click="resetBtn('formInline')">重置</el-button>
+          <el-button type="primary" @click="loadData">搜索</el-button>
+          <el-button type="success" v-if="facilitiesInData.limtShow" @click="dialogShow">导入</el-button>
+          <el-button
+            type="warning"
+            v-if="facilitiesInData.limtShow"
+            @click="handleEditPlan('add')"
+            class="mag-right-10"
+          >新增</el-button>
+        </el-form-item>
+      </el-form>
+    </div>
+    <div class="notab">
+      <el-scrollbar>
+        <el-table v-loading="isLoading" :data="tableData" stripe>
+          <el-table-column align="left" :show-overflow-tooltip="true" prop="buildId" label="楼栋ID"></el-table-column>
+          <el-table-column align="left" :show-overflow-tooltip="true" prop="buildName" label="楼栋名称"></el-table-column>
+          <el-table-column align="left" :show-overflow-tooltip="true" prop="floorId" label="楼层ID"></el-table-column>
+          <el-table-column align="left" :show-overflow-tooltip="true" prop="floorName" label="楼层名称"></el-table-column>
+          <el-table-column
+            align="left"
+            :show-overflow-tooltip="true"
+            prop="firecontrolroomName"
+            label="消控室名称"
+          ></el-table-column>
+          <el-table-column align="center" label="操作">
+            <template slot-scope="scope">
+              <el-button
+                type="text"
+                @click="handleEditPlan('edit',scope.row)"
+                v-if="facilitiesInData.limtShow"
+              >编辑</el-button>
+              <el-button type="text" @click="handleEditPlan('view',scope.row)">查看</el-button>
+              <el-button
+                type="text"
+                @click="handleEditPlan('delete',scope.row)"
+                v-if="facilitiesInData.limtShow"
+              >删除</el-button>
+              <!--              <el-tooltip content="编辑" placement="bottom">-->
+              <!--                <el-button-->
+              <!--                  v-if="facilitiesInData.limtShow"-->
+              <!--                  type="text"-->
+              <!--                  icon="icon-l-new ggicon-modification"-->
+              <!--                  style="font-size: 16px"-->
+              <!--                  @click="handleEditPlan('edit',scope.row)"-->
+              <!--                ></el-button>-->
+              <!--              </el-tooltip>-->
+              <!--              <el-tooltip content="查看" placement="bottom">-->
+              <!--                <el-button-->
+              <!--                  type="text"-->
+              <!--                  icon="icon-l-new el-icon-view"-->
+              <!--                  style="font-size: 16px"-->
+              <!--                  @click="handleEditPlan('view',scope.row)"-->
+              <!--                ></el-button>-->
+              <!--              </el-tooltip>-->
+              <!--              <el-tooltip content="删除" placement="bottom">-->
+              <!--                <el-button-->
+              <!--                  v-if="facilitiesInData.limtShow"-->
+              <!--                  type="text"-->
+              <!--                  icon="icon-l-new el-icon-delete-solid"-->
+              <!--                  style="font-size: 16px"-->
+              <!--                  @click="handleEditPlan('delete',scope.row)"-->
+              <!--                ></el-button>-->
+              <!--              </el-tooltip>-->
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-scrollbar>
+      <Pagination :widgetInfo="widgetInfo" v-on:sonHandleCurrentChange="sonHandleCurrentChange"/>
+    </div>
+    <el-dialog :title="optTitle" :visible.sync="dialogFormVisible">
+      <div style="height:400px;overflow-x: hidden;overflow-y: auto;">
+        <el-form :model="plan" label-position="left" inline class="demo-table-expand dialog-expand">
+          <el-form-item label="*楼栋:">
+            <el-select
+              :disabled="inputDisabled"
+              v-model.trim="plan.buildId"
+              placeholder="楼栋信息"
+              @change="getFloorInfo"
+            >
+              <el-option
+                v-for="item in buildList"
+                :key="item.buildId"
+                :label="item.buildName"
+                :value="item.buildId"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="*楼层:">
+            <el-select
+              :disabled="inputDisabled"
+              v-model.trim="plan.floorId"
+              placeholder="楼层信息"
+              @change="getFloorInfoName"
+            >
+              <el-option
+                v-for="item in floorList"
+                :key="item.floorId"
+                :label="item.floorName"
+                :value="item.floorId"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+
+          <el-form-item label="*消防控制室名称:" :label-width="formLabelWidth">
+            <el-input
+              :disabled="inputDisabled"
+              v-model="plan.firecontrolroomName"
+              auto-complete="off"
+            ></el-input>
+          </el-form-item>
+          <el-form-item label="*消防控制室地址:" :label-width="formLabelWidth">
+            <el-input
+              :disabled="inputDisabled"
+              v-model="plan.firecontrolroomAddress"
+              auto-complete="off"
+            ></el-input>
+          </el-form-item>
+          <el-form-item label="*消防控制室电话:" :label-width="formLabelWidth">
+            <el-input
+              :disabled="inputDisabled"
+              v-model="plan.firecontrolroomTel"
+              auto-complete="off"
+            ></el-input>
+          </el-form-item>
+          <el-form-item label="备注:" :label-width="formLabelWidth">
+            <el-input :disabled="inputDisabled" v-model="plan.remark" auto-complete="off"></el-input>
+          </el-form-item>
+        </el-form>
+        <div v-if="showSaveOrUpdate" slot="footer" class="dialog-footer">
+          <el-button @click="dialogFormVisible = false">取 消</el-button>
+          <el-button type="primary" @click="saveOrUpdateForm">确 定</el-button>
+        </div>
+      </div>
+    </el-dialog>
+    <el-dialog title="上传" @close="closeDialog" :visible.sync="dialogExcelVisible" width="500px">
+      <div class="daoru-wrapper">
+        <import-upload v-on:importHandel="setImport()" v-bind:uploadVal="uploadVal"></import-upload>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+<script>
+import api from "~/config/http";
+import Pagination from "~/components/Pagination";
+import importUpload from "~/components/upload/importUpload";
+export default {
+  name: "ControlRoom",
+  props: ["facilitiesInData"],
+  components: {
+    Pagination,
+    importUpload
+  },
+  data() {
+    return {
+      buildList: [], //楼栋
+      floorList: [], //楼层
+      widgetInfo: {
+        total: null,
+        pageSize: 6,
+        pageNo: 1
+      },
+      formInline: {
+        //查询表单
+        buildId: "",
+        buildName: "",
+        floorId: "",
+        floorName: "",
+        firecontrolroomName: ""
+      },
+      tableData: [],
+      isLoading: false,
+      dialogFormVisible: false,
+      plan: {
+        floorId: null
+      },
+      formLabelWidth: "140px",
+      optTitle: null,
+      inputDisabled: false,
+      showSaveOrUpdate: false,
+      optMode: null,
+      dialogExcelVisible: false,
+      uploadVal: {}
+    };
+  },
+
+  mounted() {
+    this.findBuildByUnitId();
+  },
+  methods: {
+    closeDialog() {
+      //调用子组件方法
+      this.$refs.myChild.ResetOrCloseBtn();
+    },
+    //导入
+    dialogShow() {
+      this.dialogExcelVisible = true;
+      this.uploadVal = {
+        fileId: this.facilitiesInData.id,
+        unitId: this.facilitiesInData.unitId,
+        operationOrgId: this.facilitiesInData.subCenterCode,
+        TabName: "消控室"
+      };
+    },
+    //上传
+    setImport(d) {
+      console.log(222, d);
+      this.dialogExcelVisible = false;
+      this.loadData();
+    },
+    resetBtn(formName) {
+      this.$refs[formName].resetFields();
+      this.loadData();
+    },
+    //查询单位下面的楼栋信息
+    findBuildByUnitId() {
+      this.isLoading = true;
+      api
+        .post("/remoteApi/tool/build/findBuildByUnitId", {
+          unitId: this.facilitiesInData.unitId
+        })
+        .then(res => {
+          this.isLoading = false;
+          if (res && res.code === "success") {
+            this.buildList = res.data;
+          } else {
+            console.log("没有数据");
+          }
+        })
+        .catch(err => {
+          this.isLoading = false;
+          this.$message({
+            type: "warning",
+            message: "加载超时,请重新加载!"
+          });
+        });
+    },
+    //联动楼层信息
+    getFloorInfo(buildId, cb) {
+      // this.plan.buildName = this.buildList.find(item => {
+      //   return item.buildId === buildId;
+      // }).buildName;
+      this.floorList = null;
+      this.formInline.floorId = null;
+      this.plan.floorId = null;
+      this.isLoading = true;
+      api
+        .post("/remoteApi/tool/floor/getFloorInfoByUnitIdAndBuildId", {
+          unitId: this.facilitiesInData.unitId,
+          buildId: buildId
+        })
+        .then(res => {
+          this.isLoading = false;
+          if (res && res.code === "success") {
+            this.floorList = res.data;
+            if (cb) {
+              cb = cb();
+            }
+          } else {
+            console.log("没有数据");
+          }
+        })
+        .catch(err => {
+          this.isLoading = false;
+          this.$message({
+            type: "warning",
+            message: "加载超时,请重新加载!"
+          });
+        });
+    },
+    //获取楼层名称
+    getFloorInfoName(floorId) {
+      this.plan.floorName = this.floorList.find(item => {
+        return item.floorId === floorId;
+      }).floorName;
+    },
+    loadData() {
+      this.isLoading = true;
+      api
+        .post(
+          "/remoteApi/tool/firecontrolroom/findRecordEnterpriseFirecontrolroomList",
+          {
+            unitId: this.facilitiesInData.unitId,
+            buildId: this.formInline.buildId,
+            buildName: this.formInline.buildName,
+            floorId: this.formInline.floorId,
+            floorName: this.formInline.floorName,
+            firecontrolroomName: this.formInline.firecontrolroomName,
+            pageNo: this.widgetInfo.pageNo,
+            pageSize: this.widgetInfo.pageSize
+          }
+        )
+        .then(res => {
+          this.isLoading = false;
+          if (res && res.code === "success") {
+            this.tableData = res.data.rows;
+            this.widgetInfo.total =
+              res.data.total === null ? 0 : res.data.total;
+          } else {
+            this.tableData = [];
+            this.widgetInfo.list = res.data.rows;
+            this.widgetInfo.total = 0;
+            console.log("没有数据");
+          }
+        })
+        .catch(err => {
+          this.isLoading = false;
+          this.$message({
+            type: "warning",
+            message: "加载超时,请重新加载!"
+          });
+        });
+    },
+    // 分页
+    sonHandleCurrentChange(widgetInfo) {
+      let that = this;
+      this.widgetInfo.pageSize = widgetInfo.pageSize
+        ? parseInt(widgetInfo.pageSize)
+        : this.widgetInfo.pageSize;
+      this.widgetInfo.pageNo = widgetInfo.pageNo
+        ? parseInt(widgetInfo.pageNo)
+        : this.widgetInfo.pageNo;
+      that.loadData();
+    },
+    handleEditPlan(method, planObj) {
+      this.dialogFormVisible = true;
+      this.optMode = method;
+      if ("add" == method) {
+        //新增
+        this.optTitle = "新增";
+        this.plan = { floorId: null };
+        this.plan.cretedBy = api.getGlobalVal("userObj").id;
+        this.inputDisabled = false;
+        this.showSaveOrUpdate = true;
+        console.log(this.showSaveOrUpdate);
+      } else if ("edit" == method) {
+        //编辑
+        this.optTitle = "编辑";
+        this.inputDisabled = false;
+        this.showSaveOrUpdate = true;
+        this.getFloorInfo(planObj.buildId, () => {
+          this.plan = planObj;
+          this.plan.cretedBy = api.getGlobalVal("userObj").id;
+          this.plan.trialId = this.facilitiesInData.id;
+          this.inputDisabled = false;
+          this.showSaveOrUpdate = true;
+        });
+      } else if ("delete" == method) {
+        //删除
+        this.dialogFormVisible = false;
+        this.deleteHandle(planObj);
+      } else {
+        //查看
+        this.optTitle = "查看";
+        this.getFloorInfo(planObj.buildId, () => {
+          this.plan = planObj;
+          this.plan.cretedBy = api.getGlobalVal("userObj").id;
+          this.inputDisabled = true;
+          this.showSaveOrUpdate = false;
+        });
+      }
+    },
+    //搜索
+    search() {
+      this.loadData();
+    },
+    saveOrUpdateForm() {
+      //保存或更新操作
+      var that = this;
+      if ("add" == that.optMode) {
+        that.plan.cretedBy = api.getGlobalVal("userObj").id;
+        that.plan.unitId = this.facilitiesInData.unitId;
+        that.plan.trialId = this.facilitiesInData.id;
+        that.isLoading = true;
+        api
+          .post(
+            "/remoteApi/tool/firecontrolroom/addRecordEnterpriseFirecontrolroomInfo",
+            that.plan
+          )
+          .then(res => {
+            that.isLoading = false;
+            if (res && res.code === "success") {
+              this.loadData();
+              that.$message({
+                message: "保存成功",
+                type: "success"
+              });
+            } else {
+              that.$message({
+                message: "保存失败",
+                type: "error"
+              });
+            }
+          })
+          .catch(err => {
+            console.log(err);
+            that.isLoading = false;
+          });
+      } else if ("edit" == that.optMode) {
+        that.plan.cretedBy = api.getGlobalVal("userObj").id;
+        that.isLoading = true;
+        api
+          .post(
+            "/remoteApi/tool/firecontrolroom/updateRecordEnterpriseFirecontrolroomInfo",
+            that.plan
+          )
+          .then(res => {
+            that.isLoading = false;
+            if (res && res.code === "success") {
+              that.$message({
+                message: "更新成功",
+                type: "success"
+              });
+              this.loadData();
+            } else {
+              that.$message({
+                message: "更新失败",
+                type: "error"
+              });
+            }
+          })
+          .catch(err => {
+            console.log(err);
+            that.isLoading = false;
+          });
+      } else {
+        console.log("异常保存或更新模式");
+      }
+      this.dialogFormVisible = false;
+    },
+    deleteHandle(planObj) {
+      //删除
+      var that = this;
+      that.plan = JSON.parse(JSON.stringify(planObj));
+      that
+        .$confirm("确定要删除吗?", "提示", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning"
+        })
+        .then(() => {
+          that.isLoading = true;
+          api
+            .post(
+              "/remoteApi/tool/firecontrolroom/deleteRecordEnterpriseFirecontrolroomInfo",
+              {
+                id: that.plan.id,
+                cretedBy: api.getGlobalVal("userObj").id,
+                trialId: that.facilitiesInData.id
+              }
+            )
+            .then(res => {
+              that.isLoading = false;
+              if (res && res.code === "success") {
+                that.$message({
+                  message: "删除成功",
+                  type: "success"
+                });
+                that.loadData();
+              } else {
+                that.$message({
+                  message: "删除失败",
+                  type: "error"
+                });
+              }
+            })
+            .catch(err => {
+              console.log(err);
+              that.isLoading = false;
+            });
+        })
+        .catch(() => {});
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+@import "~/assets/css/editArchivesPoint.scss";
+</style>

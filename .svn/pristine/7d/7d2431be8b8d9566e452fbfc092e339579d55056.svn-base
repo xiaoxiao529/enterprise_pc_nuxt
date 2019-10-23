@@ -1,0 +1,715 @@
+@font-face {
+  font-family: 'ggicon';
+  src:  url('../font-icon/fonts/ggicon.eot?r64vw9');
+  src:  url('../font-icon/fonts/ggicon.eot?r64vw9#iefix') format('embedded-opentype'),
+    url('../font-icon/fonts/ggicon.ttf?r64vw9') format('truetype'),
+    url('../font-icon/fonts/ggicon.woff?r64vw9') format('woff'),
+    url('../font-icon/fonts/ggicon.svg?r64vw9#ggicon') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+
+[class^="ggicon-"], [class*=" ggicon-"] {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: 'ggicon' !important;
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.ggicon-dark_bg_btn:before {
+  content: "\e9cb";
+}
+.ggicon-light_bg_btn:before {
+  content: "\e9cc";
+}
+.ggicon-titleGps:before {
+  content: "\e9ca";
+}
+.ggicon-danwei:before {
+  content: "\e9c9";
+}
+.ggicon-agree:before {
+  content: "\e924";
+}
+.ggicon-disagree:before {
+  content: "\e9c8";
+  color: #f00;
+}
+.ggicon-systemManagementActive:before {
+  content: "\e922";
+  color: #fff;
+}
+.ggicon-deviceInfoActive:before {
+  content: "\e923";
+  color: #fff;
+}
+.ggicon-elevatorsActive:before {
+  content: "\e918";
+  color: #fff;
+}
+.ggicon-conditionersActive:before {
+  content: "\e919";
+  color: #fff;
+}
+.ggicon-monitoringsActive:before {
+  content: "\e91a";
+  color: #fff;
+}
+.ggicon-serviceActive:before {
+  content: "\e917" !important;
+  color: #fff;
+}
+.ggicon-checkPlanActive:before {
+  content: "\e916" !important;
+  color: #fff;
+}
+.ggicon-buildings:before {
+  content: "\e9c7";
+}
+.ggicon-newtime:before {
+  content: "\e9c3";
+}
+.ggicon-alters:before {
+  content: "\e9c4";
+}
+.ggicon-notification:before {
+  content: "\e9c5";
+}
+.ggicon-8:before {
+  content: "\e9c6";
+}
+.ggicon-uploadings:before {
+  content: "\e9c2";
+}
+.ggicon-forbid:before {
+  content: "\e9bd";
+}
+.ggicon-documents:before {
+  content: "\e9be";
+}
+.ggicon-resets:before {
+  content: "\e9bf";
+}
+.ggicon-authority:before {
+  content: "\e9c0";
+}
+.ggicon-modification:before {
+  content: "\e9c1";
+}
+.ggicon-service:before {
+  content: "\e9b9";
+  color: #fff;
+}
+.ggicon-monitorings:before {
+  content: "\e9ba";
+  color: #1e499d;
+}
+.ggicon-elevators:before {
+  content: "\e9bb";
+  color: #005c9f;
+}
+.ggicon-conditioners:before {
+  content: "\e9bc";
+  color: #2050a2;
+}
+.ggicon-relation:before {
+  content: "\e962";
+}
+.ggicon-sort:before {
+  content: "\e963";
+}
+.ggicon-downLoad:before {
+  content: "\e964";
+}
+.ggicon-addSolid:before {
+  content: "\e965";
+}
+.ggicon-update:before {
+  content: "\e966";
+}
+.ggicon-deleteSolid:before {
+  content: "\e967";
+}
+.ggicon-removeSolid:before {
+  content: "\e968";
+}
+.ggicon-trash2:before {
+  content: "\e969";
+}
+.ggicon-location:before {
+  content: "\e96a";
+}
+.ggicon-edit:before {
+  content: "\e96b";
+}
+.ggicon-dortDown:before {
+  content: "\e96c";
+}
+.ggicon-selectArrow:before {
+  content: "\e978";
+}
+.ggicon-calendar:before {
+  content: "\e977";
+}
+.ggicon-noData:before {
+  content: "\e976";
+}
+.ggicon-forbidden:before {
+  content: "\e975";
+}
+.ggicon-noticeSolid:before {
+  content: "\e974";
+}
+.ggicon-illuminationSolid:before {
+  content: "\e973";
+}
+.ggicon-sortUp:before {
+  content: "\e972";
+}
+.ggicon-blutteeth:before {
+  content: "\e98b";
+}
+.ggicon-menu:before {
+  content: "\e98a";
+}
+.ggicon-hornSolid:before {
+  content: "\e988";
+}
+.ggicon-line:before {
+  content: "\e989";
+}
+.ggicon-fireSolid:before {
+  content: "\e987";
+}
+.ggicon-file:before {
+  content: "\e971";
+}
+.ggicon-infoSearch:before {
+  content: "\e970";
+}
+.ggicon-load:before {
+  content: "\e96f";
+}
+.ggicon-upload:before {
+  content: "\e96e";
+}
+.ggicon-basicInfo:before {
+  content: "\e96d";
+}
+.ggicon-yearlyPlan:before {
+  content: "\e990";
+}
+.ggicon-maintenanceContract:before {
+  content: "\e991";
+}
+.ggicon-examiningReport:before {
+  content: "\e992";
+}
+.ggicon-trainingDrills:before {
+  content: "\e979";
+}
+.ggicon-pre-planManagement:before {
+  content: "\e97a";
+}
+.ggicon-exposureRating:before {
+  content: "\e97b";
+}
+.ggicon-ZigBee:before {
+  content: "\e97c";
+}
+.ggicon-fireExtinguishingSprinkler:before {
+  content: "\e97d";
+}
+.ggicon-foamFire-fighting:before {
+  content: "\e97e";
+}
+.ggicon-gasFireControl:before {
+  content: "\e97f";
+}
+.ggicon-fan:before {
+  content: "\e980";
+}
+.ggicon-illumination:before {
+  content: "\e981";
+}
+.ggicon-trumpet:before {
+  content: "\e982";
+}
+.ggicon-telphone:before {
+  content: "\e983";
+}
+.ggicon-fireSeparationFacility:before {
+  content: "\e984";
+}
+.ggicon-powderExtinguishingSystem:before {
+  content: "\e985";
+}
+.ggicon-monitorSystem:before {
+  content: "\e986";
+}
+.ggicon-waterMist:before {
+  content: "\e98c";
+}
+.ggicon-fireElevator:before {
+  content: "\e98d";
+}
+.ggicon-annihilator:before {
+  content: "\e98e";
+}
+.ggicon-other:before {
+  content: "\e98f";
+}
+.ggicon-exit1:before {
+  content: "\e9b2";
+}
+.ggicon-info:before {
+  content: "\e9ae";
+}
+.ggicon-bluetooth:before {
+  content: "\e9a9";
+}
+.ggicon-picture:before {
+  content: "\e9a6";
+}
+.ggicon-trash:before {
+  content: "\e9a1";
+}
+.ggicon-facility:before {
+  content: "\e993";
+}
+.ggicon-fireHydrant:before {
+  content: "\e994";
+}
+.ggicon-next:before {
+  content: "\e995";
+}
+.ggicon-powerUp:before {
+  content: "\e996";
+}
+.ggicon-selected:before {
+  content: "\e997";
+}
+.ggicon-sure:before {
+  content: "\e9b4";
+}
+.ggicon-water:before {
+  content: "\e9b8";
+}
+.ggicon-fire:before {
+  content: "\e9b7";
+}
+.ggicon-backlog:before {
+  content: "\e9b1";
+}
+.ggicon-safetyAdvisory:before {
+  content: "\e9ad";
+}
+.ggicon-horn:before {
+  content: "\e9aa";
+}
+.ggicon-switchBtn:before {
+  content: "\e9a7";
+}
+.ggicon-monitor:before {
+  content: "\e9a5";
+}
+.ggicon-statisticalAnalysis:before {
+  content: "\e9a2";
+}
+.ggicon-safetyInspections:before {
+  content: "\e9a0";
+}
+.ggicon-facilityInfo:before {
+  content: "\e99b";
+}
+.ggicon-systemManagement:before {
+  content: "\e99a";
+}
+.ggicon-listImg:before {
+  content: "\e999";
+}
+.ggicon-sort2:before {
+  content: "\e998";
+}
+.ggicon-back1:before {
+  content: "\e9b3";
+}
+.ggicon-lock:before {
+  content: "\e9b5";
+}
+.ggicon-user:before {
+  content: "\e9b6";
+}
+.ggicon-folder:before {
+  content: "\e9b0";
+}
+.ggicon-supervision:before {
+  content: "\e9af";
+}
+.ggicon-inspection:before {
+  content: "\e9ac";
+}
+.ggicon-equipment:before {
+  content: "\e9ab";
+}
+.ggicon-echart:before {
+  content: "\e9a8";
+}
+.ggicon-round:before {
+  content: "\e9a4";
+}
+.ggicon-bookmark:before {
+  content: "\e9a3";
+}
+.ggicon-arrow:before {
+  content: "\e99f";
+}
+.ggicon-magnifying-glass:before {
+  content: "\e99e";
+}
+.ggicon-download:before {
+  content: "\e99d";
+}
+.ggicon-remove:before {
+  content: "\e99c";
+}
+.ggicon-home:before {
+  content: "\e903";
+  color: #FFFFFF;
+}
+.ggicon-runMonitor:before {
+  content: "\e90c";
+  color: #FFFFFF;
+}
+.ggicon-checkPlan:before {
+  content: "\e90d";
+  color: #FFFFFF;
+}
+.ggicon-safeRegula:before {
+  content: "\e90e";
+  color: #FFFFFF;
+}
+.ggicon-messManage:before {
+  content: "\e90f";
+  color: #FFFFFF;
+}
+.ggicon-countQuery:before {
+  content: "\e911";
+  color: #FFFFFF;
+}
+.ggicon-deviceInfo:before {
+  content: "\e912";
+  color: #FFFFFF;
+}
+.ggicon-my:before {
+  content: "\e913";
+  color: #FFFFFF;
+}
+.ggicon-homeActive:before {
+  content: "\e914";
+  color: #FFFFFF;
+}
+.ggicon-runMonitorActive:before {
+  content: "\e915";
+  color: #FFFFFF;
+}
+.ggicon-safeRegulaActive:before {
+  content: "\e91c";
+  color: #FFFFFF;
+}
+.ggicon-messManageActive:before {
+  content: "\e91e";
+  color: #FFFFFF;
+}
+.ggicon-countQueryActive:before {
+  content: "\e921";
+  color: #FFFFFF;
+}
+.ggicon-myActive:before {
+  content: "\e925";
+  color: #FFFFFF;
+}
+.ggicon-transmittingSet:before {
+  content: "\e926";
+  color: #FFFFFF;
+}
+.ggicon-terrace:before {
+  content: "\e927";
+  color: #FFFFFF;
+}
+.ggicon-transmittingSetSolid .path1:before {
+  content: "\e928";
+  color: rgb(255, 255, 255);
+}
+.ggicon-transmittingSetSolid .path2:before {
+  content: "\e929";
+  margin-left: -1em;
+  color: rgb(82, 130, 195);
+}
+.ggicon-transmittingSetSolid .path3:before {
+  content: "\e92a";
+  margin-left: -1em;
+  color: rgb(82, 130, 195);
+}
+.ggicon-transmittingSetSolid .path4:before {
+  content: "\e92b";
+  margin-left: -1em;
+  color: rgb(82, 130, 195);
+}
+.ggicon-transmittingSetSolid .path5:before {
+  content: "\e92c";
+  margin-left: -1em;
+  color: rgb(82, 130, 195);
+}
+.ggicon-transmittingSetSolid .path6:before {
+  content: "\e92d";
+  margin-left: -1em;
+  color: rgb(82, 130, 195);
+}
+.ggicon-transmittingSetSolid .path7:before {
+  content: "\e92e";
+  margin-left: -1em;
+  color: rgb(82, 130, 195);
+}
+.ggicon-transmittingSetSolid .path8:before {
+  content: "\e92f";
+  margin-left: -1em;
+  color: rgb(82, 130, 195);
+}
+.ggicon-transmittingSetSolid .path9:before {
+  content: "\e930";
+  margin-left: -1em;
+  color: rgb(82, 130, 195);
+}
+.ggicon-transmittingSetSolid .path10:before {
+  content: "\e931";
+  margin-left: -1em;
+  color: rgb(82, 130, 195);
+}
+.ggicon-transmittingSetSolid .path11:before {
+  content: "\e932";
+  margin-left: -1em;
+  color: rgb(82, 130, 195);
+}
+.ggicon-transmittingSetSolid .path12:before {
+  content: "\e933";
+  margin-left: -1em;
+  color: rgb(82, 130, 195);
+}
+.ggicon-transmittingSetSolid .path13:before {
+  content: "\e934";
+  margin-left: -1em;
+  color: rgb(82, 130, 195);
+}
+.ggicon-transmittingSetSolid .path14:before {
+  content: "\e935";
+  margin-left: -1em;
+  color: rgb(82, 130, 195);
+}
+.ggicon-transmittingSetSolid .path15:before {
+  content: "\e936";
+  margin-left: -1em;
+  color: rgb(82, 130, 195);
+}
+.ggicon-transmittingSetSolid .path16:before {
+  content: "\e937";
+  margin-left: -1em;
+  color: rgb(82, 130, 195);
+}
+.ggicon-terraceSolid .path1:before {
+  content: "\e938";
+  color: rgb(255, 255, 255);
+}
+.ggicon-terraceSolid .path2:before {
+  content: "\e939";
+  margin-left: -1em;
+  color: rgb(82, 130, 195);
+}
+.ggicon-terraceSolid .path3:before {
+  content: "\e93a";
+  margin-left: -1em;
+  color: rgb(82, 130, 195);
+}
+.ggicon-terraceSolid .path4:before {
+  content: "\e93b";
+  margin-left: -1em;
+  color: rgb(82, 130, 195);
+}
+.ggicon-terraceSolid .path5:before {
+  content: "\e93c";
+  margin-left: -1em;
+  color: rgb(82, 130, 195);
+}
+.ggicon-terraceSolid .path6:before {
+  content: "\e93d";
+  margin-left: -1em;
+  color: rgb(82, 130, 195);
+}
+.ggicon-terraceSolid .path7:before {
+  content: "\e93e";
+  margin-left: -1em;
+  color: rgb(82, 130, 195);
+}
+.ggicon-terraceSolid .path8:before {
+  content: "\e93f";
+  margin-left: -1em;
+  color: rgb(82, 130, 195);
+}
+.ggicon-sunny:before {
+  content: "\e940";
+}
+.ggicon-cloudy:before {
+  content: "\e941";
+}
+.ggicon-shade:before {
+  content: "\e942";
+}
+.ggicon-flurry:before {
+  content: "\e943";
+}
+.ggicon-moderateRain:before {
+  content: "\e944";
+}
+.ggicon-heavyRain:before {
+  content: "\e945";
+}
+.ggicon-rainstorm:before {
+  content: "\e946";
+}
+.ggicon-downpour:before {
+  content: "\e947";
+}
+.ggicon-heavyDownpour:before {
+  content: "\e948";
+}
+.ggicon-thundershower:before {
+  content: "\e949";
+}
+.ggicon-shower:before {
+  content: "\e94a";
+}
+.ggicon-moderateRain1:before {
+  content: "\e94b";
+}
+.ggicon-ModerateHeavyRain:before {
+  content: "\e94c";
+}
+.ggicon--cloudburst:before {
+  content: "\e94d";
+}
+.ggicon-heavyRainstorm:before {
+  content: "\e94e";
+}
+.ggicon-extraordinaryRainstorm:before {
+  content: "\e94f";
+}
+.ggicon-hailstone:before {
+  content: "\e951";
+}
+.ggicon-fog:before {
+  content: "\e952";
+}
+.ggicon-hailstone1:before {
+  content: "\e953";
+}
+.ggicon-freezingRain:before {
+  content: "\e954";
+}
+.ggicon-sandStorm:before {
+  content: "\e955";
+}
+.ggicon-heavySandstorm:before {
+  content: "\e956";
+}
+.ggicon-haze:before {
+  content: "\e957";
+}
+.ggicon-sandBlowing:before {
+  content: "\e958";
+}
+.ggicon-surfaceDust:before {
+  content: "\e959";
+}
+.ggicon-scouther:before {
+  content: "\e95a";
+}
+.ggicon-moderateSnow:before {
+  content: "\e95b";
+}
+.ggicon-heavySnow:before {
+  content: "\e95c";
+}
+.ggicon-heavySnowfall:before {
+  content: "\e95d";
+}
+.ggicon-snowShower:before {
+  content: "\e95e";
+}
+.ggicon-moderateSnow1:before {
+  content: "\e95f";
+}
+.ggicon-heavySnow1:before {
+  content: "\e960";
+}
+.ggicon-heavySnowfall1:before {
+  content: "\e961";
+}
+.ggicon-exit:before {
+  content: "\e90a";
+}
+.ggicon-passowrd:before {
+  content: "\e90b";
+}
+.ggicon-arrowBottom:before {
+  content: "\e906";
+}
+.ggicon-arrowTop:before {
+  content: "\e907";
+}
+.ggicon-floorAlarm:before {
+  content: "\e908";
+}
+.ggicon-floorHidden:before {
+  content: "\e909";
+}
+.ggicon-enlarge:before {
+  content: "\e904";
+}
+.ggicon-narrow:before {
+  content: "\e905";
+}
+.ggicon-cloud:before {
+  content: "\e901";
+}
+.ggicon-list:before {
+  content: "\e902";
+}
+.ggicon-building:before {
+  content: "\e900";
+}
+.ggicon-hornAround:before {
+  content: "\e950";
+}
+.ggicon-close:before {
+  content: "\e920";
+}
+.ggicon-arrowRight:before {
+  content: "\e91f";
+}
+.ggicon-forewarning:before {
+  content: "\e910";
+}
+.ggicon-back:before {
+  content: "\e91b";
+}
+.ggicon-arrowDown:before {
+  content: "\e91d";
+}

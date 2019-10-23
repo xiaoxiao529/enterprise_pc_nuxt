@@ -1,0 +1,570 @@
+<template>
+    <div class="storied-suilding-wrapper">
+        <div>
+            <el-form label-position="left" inline class="demo-table-expand" >
+                <el-form-item label="楼栋:" :label-width="searchFormLabelWidth">
+                    <el-select v-model.trim="formInline.buildId" placeholder="楼栋信息" filterable @change="getFloorInfo">
+                        <el-option v-for="item in buildList" :key="item.buildId" :label="item.buildName" :value="item.buildId">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="楼层:" :label-width="searchFormLabelWidth" >
+                    <el-select v-model.trim="formInline.floorId" filterable placeholder="楼层信息">
+                        <el-option v-for="item in floorList" :key="item.floorId" :label="item.floorName" :value="item.floorId">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="设施系统:" :label-width="searchFormLabelWidth" >
+                    <el-select v-model.trim="formInline.deviceSys" placeholder="设施系统" @change="selectDeviceSys">
+                        <el-option v-for="item in deviceSys" :key="item.value" :label="item.label" :value="item.value">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="设施:" :label-width="searchFormLabelWidth" >
+                    <el-select v-model.trim="formInline.device" placeholder="全部" @change="selectDevice">
+                        <el-option v-for="item in optsTemp" :key="item.value" :label="item.label" :value="item.value">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+
+                <el-form-item label="设备ID:" :label-width="searchFormLabelWidth" >
+                    <el-input  v-model="formInline.deviceId"></el-input>
+                </el-form-item>
+                <el-form-item label="状态:" :label-width="searchFormLabelWidth">
+                    <el-select  v-model="status" filterable placeholder="请选择">
+                        <el-option v-for="item in stateList" :key="item.id" :label="item.name" :value="item.id"
+                        ></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item class="t-right" style="width: 50%">
+                    <el-button @click="resetBtn" >重置</el-button>
+                    <el-button type="primary" @click="loadData('search')">搜索</el-button>
+                </el-form-item>
+            </el-form>
+        </div>
+        <div class="notab">
+            <el-scrollbar>
+                <el-table v-loading="isLoading" :data="tableData" stripe>
+                    <el-table-column align="left" min-width="10%" :show-overflow-tooltip="true" pageSize="pageSize" prop="deviceId" label="设备ID">
+                    </el-table-column>
+                    <el-table-column align="left" min-width="15%" :show-overflow-tooltip="true" prop="deviceAddress" label="设备地址">
+                    </el-table-column>
+                    <el-table-column align="left" min-width="15%" :show-overflow-tooltip="true" prop="deviceName" label="设备名称">
+                    </el-table-column>
+                    <el-table-column align="left" min-width="15%" :show-overflow-tooltip="true" prop="buildName" label="楼栋">
+                    </el-table-column>
+                    <el-table-column align="left" min-width="8%" :show-overflow-tooltip="true" prop="floorName" label="楼层">
+                    </el-table-column>
+                    <el-table-column
+                            align="left"
+                            min-width="8%"
+                            :show-overflow-tooltip="true"
+                            prop="stateName"
+                            label="状态"
+                    ></el-table-column>
+                    <el-table-column align="center" min-width="15%" label="操作">
+                        <template slot-scope="scope">
+                            <el-button type="text"  @click="handleEditPlan('view',scope.row)">查看</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </el-scrollbar>
+            <Pagination :widgetInfo="widgetInfo" v-on:sonHandleCurrentChange="sonHandleCurrentChange" />
+        </div>
+
+        <el-dialog  :title="optTitle" :visible.sync="dialogFormVisible" width="960px">
+            <div style="height:400px;overflow-x: hidden;overflow-y: auto;" ref="dialogScoll">
+                <el-form :model="plan" label-position="left" inline class="demo-table-expand dialog-expand">
+                    <el-form-item label="id:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.id" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="deviceAddress:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.deviceAddress" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="alarmCall:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.alarmCall" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="deviceName:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.deviceName" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="deviceTypePid:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.deviceTypePid" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="deviceTypeId:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.deviceTypeId" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="deviceTypeName:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.deviceTypeName" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="deviceId:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.deviceId" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="isCTerminal:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.isCTerminal" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="controlHost:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.controlHost" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="sourceId:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.sourceId" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="vender:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.vender" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="brand:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.brand" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="model:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.model" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="laLoop:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.laLoop" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="laMake:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.laMake" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="laPoint:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.laPoint" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="twoCode:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.twoCode" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="longitude:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.longitude" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="latitude:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.latitude" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="buildId:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.buildId" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="floorId:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.floorId" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="unitId:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.unitId" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="unitName:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.unitName" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="locationId:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.locationId" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="locationName:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.locationName" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="subCenterCode:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.subCenterCode" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="subCenterName:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.subCenterName" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="enterpriseUnitServiceModel:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.enterpriseUnitServiceModel" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="buildName:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.buildName" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="floorName:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.floorName" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="floorAreaImg:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.floorAreaImg" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="runState:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.runState" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="sStatus:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.sStatus" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="dataState:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.dataState" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="unitPointX:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.unitPointX" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="unitPointY:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.unitPointY" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="unitAddress:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.unitAddress" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="districtCode:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.districtCode" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="deviceTime:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.deviceTime" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="onlineState:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.onlineState" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="lastOnlineTime:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.lastOnlineTime" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="mapX:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.mapX" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="mapY:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.mapY" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="monitoringObject:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.monitoringObject" auto-complete="off"></el-input>
+                    </el-form-item>
+                </el-form>
+            </div>
+        </el-dialog>
+
+    </div>
+</template>
+<script>
+    import api from '~/config/http';
+    import Pagination from "~/components/Pagination";
+    export default {
+        name:'MonitoringCenter',
+        components:{
+            Pagination
+        },
+        props:['facilitiesInData'],
+        data(){
+            return{
+                buildList:[],//楼栋
+                floorList:[],//楼层
+                inputDisabled:true,
+                optTitle:'',
+                formInline:{
+                    buildId:null,
+                    buildName:null,
+                    floorId:null,
+                    floorName:null,
+                    deviceId:null,
+                    deviceTypeIds:null,
+                    deviceSys: '00000000',
+                    device: '00000000'
+                },
+                status:0,
+                stateList: [{ id: '', name: "全部" },{ id: 0, name: "在用" }, { id: 1, name: "停用" }],
+                deviceSys: [{
+                    value: '00000000',
+                    label: '全部'
+                }],
+                optsTemp: [{
+                    value: '00000000',
+                    label: '全部'
+                }],
+                searchFormLabelWidth: '80px',
+                widgetInfo: {
+                    total: null,
+                    pageSize: 6,
+                    pageNo: 1
+                },
+                tableData: [],
+                plan:{},
+                isLoading: false,
+                dialogFormVisible:false,
+                formLabelWidth: '100%',
+                ZS: {
+                    MONITOR: {}
+                }
+            }
+        },
+        mounted() {
+            this.findBuildByUnitId();
+            // this.loadData();
+            this.createDeviceTypeSelect();
+        },
+        methods:{
+
+            resetBtn(){
+                var that = this;
+                var formInline = that.formInline;
+                formInline.buildId = null;
+                formInline.buildName = null;
+                formInline.floorId = null;
+                formInline.floorName = null;
+                formInline.deviceName = null;
+                formInline.deviceId = null;
+                formInline.deviceTypeIds = null;
+                formInline.deviceSys = '00000000';
+                formInline.device = '00000000';
+                that.ZS.MONITOR.deviceQueryType = null;
+                that.status = 0;
+                that.loadData('search');
+            },
+            //查询单位下面的楼栋信息
+            findBuildByUnitId(){
+                this.isLoading = true;
+                api.post('/remoteApi/tool/build/findBuildByUnitId', {
+                    unitId: this.facilitiesInData.unitId
+                }).then(res => {
+                    this.isLoading = false;
+                    if (res && res.code === "success") {
+                        this.buildList = res.data;
+                    } else {
+                        console.log('没有数据')
+                    }
+                }).catch(err => {
+                    this.isLoading = false;
+                    this.$message({
+                        type: 'warning',
+                        message: "加载超时,请重新加载!"
+                    });
+                });
+            },
+            //联动楼层信息
+            getFloorInfo(buildId){
+                this.floorList=null;
+                this.formInline.floorId=null;
+                this.isLoading = true;
+                api.post('/remoteApi/tool/floor/getFloorInfoByUnitIdAndBuildId', {
+                    unitId: this.facilitiesInData.unitId,
+                    buildId:buildId
+                }).then(res => {
+                    this.isLoading = false;
+                    if (res && res.code === "success") {
+                        this.floorList = res.data;
+                    } else {
+                        console.log('没有数据')
+                    }
+                }).catch(err => {
+                    this.isLoading = false;
+                    this.$message({
+                        type: 'warning',
+                        message: "加载超时,请重新加载!"
+                    });
+                });
+            },
+            /**
+             *  创建设备类型下拉框
+             */
+            createDeviceTypeSelect: function () {
+                var that = this;
+                that.ZS.MONITOR.deviceQueryType = '';
+                api.post("/remoteApi/tool/deviceInfo/getDeviceTypeInfoList").then(data => {
+                    var data = data['data'] || [];
+                    that.ZS.MONITOR.deviceType = that.toTreeData(data);
+
+                    // 设备大类
+                    if (that.ZS.MONITOR.deviceType[0] != undefined) {
+                        var type1Arr = that.ZS.MONITOR.deviceType[0].children;
+                        for (var key in type1Arr) {
+                            var temp = {};
+                            temp.value = type1Arr[key].id;
+                            temp.label = type1Arr[key].name;
+                            that.deviceSys.push(temp);
+                        }
+                    }
+                })
+            },
+            /**
+             *  设备类型点击事件
+             */
+            selectDeviceSys: function (val) {
+                var that = this;
+                that.optsTemp = [{
+                    value: '00000000',
+                    label: '全部'
+                }];
+
+                // var params = {
+                //     unitId: "CKJGQ_20180312",
+                //     buildId: "CKJGQ_20180312_001",
+                //     floorId: "CKJGQ_20180312_001_U001",
+                //     deviceId: "105"
+                // }
+                //
+                // this.$emit("sendDeviceSysFn", params);
+
+                that.formInline.device = '00000000'
+
+                if(val =='00000000'){
+                    that.ZS.MONITOR.deviceQueryType =null;
+                }else{
+                    if (that.ZS.MONITOR.deviceType[0] != undefined) {
+                        var type1Arr = that.ZS.MONITOR.deviceType[0].children;
+                        for (var key in type1Arr) {
+                            if (type1Arr[key].id == val) {
+                                var typeStr = ''; //设备类型查询
+                                var type2Arr = type1Arr[key].children;
+                                that.options=[];
+                                for (var key2 in type2Arr) {
+                                    var temp = {};
+                                    temp.value = type2Arr[key2].id;
+                                    temp.label = type2Arr[key2].name;
+                                    that.optsTemp.push(temp);
+                                    that.options.push(temp);
+                                    typeStr = typeStr + ',' + temp.value;
+                                }
+                                if (typeStr.length > 0) {
+                                    that.ZS.MONITOR.deviceQueryType = typeStr.substr(1);
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            selectDevice: function (val) {
+                var that = this;
+                if (val == '00000000') {
+                    var typeStr = '';
+                    for (var key in this.options) {
+                        if (this.options[key].value != '00000000') {
+                            typeStr = typeStr + ',' + this.options[key].value;
+                        }
+                    }
+                    if (typeStr.length > 0) {
+                        that.ZS.MONITOR.deviceQueryType = typeStr.substr(1);
+                    }
+                } else {
+                    that.ZS.MONITOR.deviceQueryType = val;
+                }
+            },
+            /**
+             *  创建设备状态下拉框
+             * @private
+             */
+            createDeviceStatusSelect: function () {
+
+            },
+            /**
+             *  将设备类型原始数据转为树形结构
+             * @param data
+             * @returns {Array}
+             * @private
+             */
+            toTreeData: function (data) {
+                var pos = {};
+                var tree = [];
+                var i = 0;
+                while (data.length != 0) {
+                    if (data[i].parentid == -1) {
+                        tree.push({
+                            id: data[i].id,
+                            name: data[i].name,
+                            children: []
+                        });
+                        pos[data[i].id] = [tree.length - 1];
+                        data.splice(i, 1);
+                        i--;
+                    } else {
+                        var posArr = pos[data[i].parentid];
+                        if (posArr != undefined) {
+
+                            var obj = tree[posArr[0]];
+                            for (var j = 1; j < posArr.length; j++) {
+                                obj = obj.children[posArr[j]];
+                            }
+
+                            obj.children.push({
+                                id: data[i].id,
+                                name: data[i].name,
+                                children: []
+                            });
+                            pos[data[i].id] = posArr.concat([obj.children.length - 1]);
+                            data.splice(i, 1);
+                            i--;
+                        }
+                    }
+                    i++;
+                    if (i > data.length - 1) {
+                        i = 0;
+                    }
+                }
+                return tree;
+            },
+            //获取楼层名称
+            getFloorInfoName(floorId){
+                this.plan.floorName = this.floorList.find((item)=>{
+                    return item.floorId === floorId;
+                }).floorName;
+            },
+            loadData(pagenoFlag) {
+                this.isLoading = true;
+                if(pagenoFlag=='search'){
+                    // debugger
+                    this.widgetInfo.pageNo = 1
+                }
+                 api.post('/remoteApi/tool/deviceInfo/monitorDeviceInfoPage', {
+                     unitId: this.facilitiesInData.unitId,
+                     buildId: this.formInline.buildId,
+                     //buildName: this.formInline.buildName,
+                     floorId: this.formInline.floorId,
+                     //floorName: this.formInline.floorName,
+                     dataState:this.status,
+                     deviceId:this.formInline.deviceId,
+                     deviceTypeIds:this.ZS.MONITOR.deviceQueryType,
+                     pageNo: this.widgetInfo.pageNo,
+                     pageSize: this.widgetInfo.pageSize
+                }).then(res => {
+                    if (res.code === "success") {
+                        // console.log(res)
+                        this.isLoading = false;
+                        this.tableData = res.data.rows;
+                        this.tableData.forEach(item => {
+                            item.stateName = this.stateList.find(
+                                stateItem => stateItem.id == item.dataState
+                            ).name;
+                        });
+                        this.widgetInfo.total = res.data.total == null ? 0 : res.data.total;
+                        this.widgetInfo.pageSize = res.data.pageSize;
+                        this.widgetInfo.pageNo = res.data.pageNo;
+                    }
+                }).catch(err => {
+                    // console.log(err);
+                    this.isLoading = false;
+                    this.$message({
+                        type: 'warning',
+                        message: "加载超时,请重新加载!"
+                    });
+                });
+            },
+            // 分页
+            sonHandleCurrentChange(widgetInfo) {
+                this.widgetInfo.pageSize = (widgetInfo.pageSize ? parseInt(widgetInfo.pageSize) : this.widgetInfo.pageSize);
+                this.widgetInfo.pageNo = (widgetInfo.pageNo ? parseInt(widgetInfo.pageNo) : this.widgetInfo.pageNo);
+                this.loadData('load');
+            },
+            handleEditPlan(method,planObj){
+                this.optMode=method;
+                if('view'==method){//查看
+                    this.dialogFormVisible = true;
+                    this.optTitle="查看";
+                    this.plan = JSON.parse(JSON.stringify(planObj));
+                    this.inputDisabled=true;
+                    this.showSaveOrUpdate=false;
+                    this.$nextTick(() => {
+                        this.$refs.dialogScoll.scrollTop = 0;
+                    })
+                }
+            },
+        }
+    }
+</script>
+<style lang="scss" scoped>
+    @import "~/assets/css/editArchivesPoint.scss";
+    .storied-suilding-wrapper {
+        /deep/.demo-table-expand {
+            .el-form-item {
+                label {
+                    width: 80px;
+                }
+                .el-form-item__content {
+                    width: calc(100% - 80px);
+                }
+                &.t-right .el-form-item__content {
+                    width: 100%;
+                }
+                .el-button+.el-button{
+                    margin-left:5px;
+                }
+            }
+        }
+        /deep/.el-table {
+            .el-table__body-wrapper {
+                height: calc(100vh - 90px - 60px - 140px - 95px - 45px);
+                overflow: hidden;
+                overflow-y: auto;
+            }
+        }
+    }
+</style>
+

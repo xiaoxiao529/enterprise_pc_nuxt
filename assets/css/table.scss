@@ -1,0 +1,96 @@
+.notab {
+  height: calc(100vh - 78px - 138px);
+  width:100%;
+  background:#fff;
+  border:1px solid #e2e4e8;
+}
+.notab > div:first-child {
+    width:100%;
+    height: calc(100vh - 78px - 138px - 50px);
+}
+.staticNotab {
+    height: calc(100vh - 136px);
+    width:100%;
+    background:#fff;
+    border:1px solid #e2e4e8;
+}
+
+.reportNoTab > div:first-child {
+    width:100%;
+    height: calc(100vh - 78px - 138px - 80px);
+    overflow-y: auto;
+}
+.userNotab {
+    height: calc(100vh - 78px - 50px - 42px - 10px);
+    width:100%;
+    background:#fff;
+}
+.userNotab > div:first-child {
+    
+    width:100%;
+    height: calc(100vh - 78px  - 50px - 50px - 10px);
+    overflow-y: auto;
+}
+.myTab {
+    height: calc(100vh - 78px - 138px - 42px);
+    background:#fff;
+    width:100%;
+    border:1px solid #e2e4e8;
+}
+.myTab > div:first-child {
+    width:100%;
+    height: calc(100vh - 78px - 138px - 50px - 42px);
+}
+/* 管理平台部分 */
+
+
+
+@media screen and (max-width: 1680px) {
+    .notab {
+        height: calc(100vh - 78px - 130px);
+        background:#fff;
+    }
+    .notab > div:first-child {
+        height: calc(100vh - 78px - 130px - 50px);
+    }
+    .myTab {
+        height: calc(100vh - 78px - 130px - 42px);
+        background:#fff;
+    }
+    .myTab > div:first-child {
+        height: calc(100vh - 78px - 130px - 50px - 42px);
+    }
+    .staticNotab {
+        height: calc(100vh - 7px -  125px);
+    }
+}
+
+@media screen and (max-width: 1440px) {
+    .notab {
+        height: calc(100vh - 55px - 40px - 78px);
+        background:#fff;
+    }
+    .notab > div:first-child {
+        height: calc(100vh - 55px - 40px - 78px - 50px);
+    }
+    .myTab {
+        height: calc(100vh - 55px - 40px - 78px - 42px);
+        background:#fff;
+    }
+    .myTab > div:first-child {
+        height: calc(100vh - 55px - 40px - 78px - 50px -42px);
+    }
+    .staticNotab {
+        height: calc(100vh - 12px -  95px);
+    }
+    
+}
+@media screen and(max-width:1366px){
+    .reportNoTab > div:first-child {
+        width:100%;
+        height: calc(100vh - 78px - 138px - 70px);
+        overflow-y: auto;
+    }
+}
+
+

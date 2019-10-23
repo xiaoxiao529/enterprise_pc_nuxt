@@ -1,0 +1,308 @@
+const webpack = require('webpack');
+// var ignoreFiles = new webpack.IgnorePlugin(/\.\/jquery.min.js$/);
+const path = require('path');
+//const HtmlWebpackPlugin = require('html-webpack-plugin');
+
+//引入 api 全局配置
+import apiConfig from './config/api.config'
+
+let objProxyApi = {
+  remoteTarget: apiConfig.remoteTarget,
+  proxyApi: '/' + apiConfig.remoteApiKey + '/',
+  testProxyApi: '^/' + apiConfig.remoteApiKey + '/'
+}
+
+
+module.exports = {
+  /*
+   ** Headers of the page
+   */
+  //srcDir: "upms-web/",
+  head: {
+    title: '电子档案管理',
+    meta: [{
+        charset: 'utf-8'
+      },
+      {
+        'http-equiv': 'pragma',
+        content: 'no-cache'
+      },
+      {
+        'http-equiv': 'cache-control',
+        content: 'no-cache'
+      },
+      {
+        'http-equiv': 'expires',
+        content: '0'
+      },
+      //  {
+      //      name: 'viewport',
+      //      //content: 'width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no,viewport-fit=cover'
+      //      content: 'width=device-width, initial-scale=0.25, maximum-scale=1.5, minimum-scale=0.1, user-scalable=yes'
+      //  },
+      {
+        hid: 'description',
+        name: 'description',
+        content: 'Nuxt.js project'
+      }
+    ],
+    link: [{
+      rel: 'icon',
+      type: 'image/x-icon',
+      href: '/nuxt-enterprise-pc/favicon-fire.ico'
+    }]
+
+  },
+  /*
+   ** Customize the progress bar color
+   */
+  loading: {
+    color: '#3B8070'
+  },
+  /*
+   ** Build configuration
+   */
+  build: {
+    /*
+     ** publicPath
+     */
+    //publicPath: '/static/',
+    /*
+     ** optimization.splitChunks
+     */
+    optimization: {
+      splitChunks: {
+        chunks: 'all',
+        automaticNameDelimiter: '.',
+        maxAsyncRequests: 7,
+        cacheGroups: {
+          commons: {
+            chunks: "initial",
+            minChunks: 2,
+            maxInitialRequests: 5, // The default limit is too small to showcase the effect
+            minSize: 0 // This is example is too small to create commons chunks
+          },
+          elementui: {
+            test: /node_modules[\\/]element-ui/,
+            chunks: 'all',
+            priority: 31,
+            //name: true
+          },
+          g2to2d: {
+            test: /node_modules[\\/]g2-2d/,
+            chunks: 'all',
+            priority: 30,
+            //name: true
+          },
+          echarts: {
+            test: /node_modules[\\/]echarts/,
+            chunks: 'all',
+            priority: 29,
+            //name: true
+          }
+        }
+      }
+    },
+    //start loaders
+    loaders: [{
+        test: /\.(scss|sass)$/,
+        use: [{
+          loader: "style-loader"
+        }, {
+          loader: "css-loader"
+        }, {
+          loader: "sass-loader"
+        }]
+      },
+      {
+        test: /\.(png|jpe?g|gif|ico|svg)$/,
+        loader: 'url-loader',
+        query: {
+          limit: 1000,
+          name: 'img/[name].[hash:7].[ext]',
+          publicPath: '../../assets/img/',
+          outputPath: '../../assets/img/'
+        }
+      },
+      {
+        test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/,
+        loader: 'url-loader',
+        query: {
+          limit: 1000,
+          name: 'fonts/[name].[hash:7].[ext]'
+        }
+      },
+      {
+        test: /\.(jpg|jpeg|png|gif|ico|svg)$/,
+        use: [{
+          loader: 'file-loader',
+          options: {
+            name: '[name].[ext]',
+            publicPath: '../../assets/img/',
+            outputPath: '../../assets/img/'
+          }
+        }]
+      }
+
+    ], //loaders end
+
+    //extend
+    extend(config, {
+      isDev,
+      isClient
+    }) {
+      if (isDev && isClient) {
+        /*config.module.rules.push({
+            enforce: 'pre',
+            test: /\.(js|vue)$/,
+            loader: 'eslint-loader',
+            exclude: /(node_modules)/
+        })*/
+      }
+    },
+
+    plugins: [
+      new webpack.ProvidePlugin({
+
+      })
+
+    ]
+  }, //build end
+  /*
+   ** generate configuration
+   */
+  generate: {
+    dir: 'e-record'
+
+  }, //generate end
+  //element ui
+  //vender 配置只打包一次
+  vender: [
+    //'element-ui',
+    'external_library'
+  ],
+  babel: {
+    "plugins": [
+      ["component", [{
+          "libraryName": "element-ui",
+          "styleLibraryName": "theme-default"
+        },
+        /*{
+            "libraryName": "mint-ui",
+            "style": true
+        },*/
+        'transform-async-to-generator',
+        'transform-runtime'
+      ]]
+    ],
+    comments: true
+  },
+  plugins: [{
+      src: '~plugins/element-ui',
+      ssr: true
+    },
+    {
+      src: '~plugins/exports',
+      ssr: false
+    },
+    {
+      src: '~plugins/import-g2.js',
+      ssr: false
+    },
+    {
+      src: '~plugins/echarts.js',
+      ssr: false
+    },
+    {
+      src: '~/plugins/vue-swiper.js',
+      ssr: false
+    },
+    {
+      src: '~/plugins/i18n.js',
+      ssr: true
+    },
+    {
+      src: '~/plugins/vue-photo-preview.js',
+      ssr: false
+    },
+    {
+      src: '~/plugins/vue-markdown.js',
+
+    },
+    {
+      src: '~/plugins/vue-quill-editor.js',
+      ssr: false
+    },
+    {
+      src: '@/plugins/Storage',
+      ssr: false
+    }
+    /* ,
+            {
+               src: '~/utils/sockjs.min.js',
+
+           },
+           {
+               src: '~/utils/stomp.min.js',
+
+           } */
+  ],
+  css: [
+    'node_modules/element-ui/lib/theme-chalk/index.css',
+    '~/assets/css/reset.css',
+    '~/assets/css/common.scss',
+    '~/assets/css/layout.scss',
+    '~/assets/css/main.scss',
+    //新增样式
+    '~/assets/css/newStyle.scss',
+    '~/assets/css/filterAll.scss',
+    '~/assets/font-icon/style.css',
+    '~/assets/font-cloud/style.css',
+    '~assets/font-awesome-4.7.0/css/font-awesome.min.css', // add by 11.5
+    'node_modules/ztree/css/zTreeStyle/zTreeStyle.css',
+    //vue-awesome-swiper plugins css config
+    'swiper/dist/css/swiper.css',
+    //markdown编辑器样式
+    'mavon-editor/dist/css/index.css',
+
+
+  ],
+  modules: [
+    '@nuxtjs/axios',
+    '@nuxtjs/proxy'
+  ],
+  axios: {
+    prefix: objProxyApi.proxyApi,
+    proxy: true,
+    credentials: true,
+  },
+  proxy: {
+    '/remoteApi/**': {
+      //target:apiConfig.remoteTarget,
+      //  target: 'http://172.19.12.113:9898',
+      //target: 'http://172.19.12.146:10002',
+      target:'http://172.19.12.146:9898',//开发环境
+      // target: 'http://172.19.13.17:9898',
+      // target: 'http://172.19.12.52:9898',
+//       target: 'http://112.27.198.15:9894',
+//			target:'http://172.19.14.19:9898',
+      changeOrigin: true,
+      pathRewrite: {
+        '^/remoteApi': ''
+      }
+    },
+    '/enterpriseApi/**': {
+      target:'http://172.19.12.146:9898',
+      changeOrigin: true,
+      pathRewrite: {
+        '^/enterpriseApi': ''
+      }
+    }
+  },
+  //中间件
+  router: {
+    //middleware: 'authenticated',
+    base: '/e-record/',
+    middleware: 'i18n'
+  }
+}

@@ -1,0 +1,787 @@
+<template>
+    <div class="company-wrapper">
+        <div class="top-button">
+            <el-button @click="modifyFlagFn" v-if="facilitiesInData.limtShow">{{modifyFlag ? '关闭手动修改' : '开启手动修改'}}</el-button>
+            <!--            <el-button type="primary" @click="dialogShow">导入</el-button>-->
+        </div>
+        <el-form v-if="modifyFlag" :label-position="labelPosition" :model="unit" ref="unit" inline class="demo-table-expand">
+            <el-form-item label="所属运营中心:">
+                <el-select v-model="unit.subCenterCode" size="mini" prop="subCenterCode" filterable placeholder="请选择">
+                    <el-option v-for="item in operationCenterList" :key="item.orgCode" :label="item.orgName" :value="item.orgCode">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="单位ID:" prop="unitId">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ unit.unitId }}</div>
+                    <span class="span-show">{{ unit.unitId }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="单位名称:" prop="unitName">
+                <el-input v-model="unit.unitName"></el-input>
+            </el-form-item>
+
+            <el-form-item label="省:" prop="province">
+                <el-select v-model="unit.province" size="mini" filterable placeholder="请选择" @change="changeCityCounty">
+                    <el-option v-for="item in provinceList" :key="item.distCode" :label="item.distName" :value="item.distCode">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="市:"  prop="city">
+                <el-select v-model="unit.city" size="mini" filterable placeholder="请选择"  @change="changeCounty">
+                    <el-option v-for="item in cityList" :key="item.distCode" :label="item.distName" :value="item.distCode">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="区:"  prop="county">
+                <el-select v-model="unit.county" size="mini" filterable placeholder="请选择">
+                    <el-option v-for="item in countyList" :key="item.distCode" :label="item.distName" :value="item.distCode">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="单位信用代码:" prop="unitCreditCode">
+                <el-input v-model="unit.unitCreditCode"></el-input>
+            </el-form-item>
+            <el-form-item label="单位地址:"  prop="unitAddress">
+                <el-input v-model="unit.unitAddress"></el-input>
+            </el-form-item>
+            <el-form-item label="经度:"  prop="unitPointX">
+                <el-input v-model="unit.unitPointX"></el-input>
+            </el-form-item>
+            <el-form-item label="纬度:" prop="unitPointY">
+                <el-input v-model="unit.unitPointY"></el-input>
+            </el-form-item>
+            <el-form-item label="鸟瞰图:" prop="aerialviewImg">
+                <el-input v-model="unit.aerialviewImg"></el-input>
+            </el-form-item>
+            <el-form-item label="建筑面积（㎡）:" prop="buildArea" >
+                <el-input v-model="unit.buildArea"></el-input>
+            </el-form-item>
+            <el-form-item label="法人姓名:" prop="legalperson">
+                <el-input v-model="unit.legalperson"></el-input>
+            </el-form-item>
+            <el-form-item label="法人联系方式:" prop="legalpersonTel">
+                <el-input v-model="unit.legalpersonTel"></el-input>
+            </el-form-item>
+            <el-form-item label="消防安全责任人:" prop="personliable">
+                <el-input v-model="unit.personliable"></el-input>
+            </el-form-item>
+            <el-form-item label="消防安全责任人联系方式:" prop="personliableTel">
+                <el-input v-model="unit.personliableTel"></el-input>
+            </el-form-item>
+            <el-form-item label="消防安全管理人:" prop="contacts">
+                <el-input v-model="unit.contacts"></el-input>
+            </el-form-item>
+            <el-form-item label="消防安全管理人联系方式:" prop="contactsTel">
+                <el-input v-model="unit.contactsTel"></el-input>
+            </el-form-item>
+            <el-form-item label="维保单位:" prop="maintenanceUnit">
+                <el-input v-model="unit.maintenanceUnit"></el-input>
+            </el-form-item>
+            <el-form-item label="维保单位联系方式:" prop="maintenanceTel">
+                <el-input v-model="unit.maintenanceTel"></el-input>
+            </el-form-item>
+            <el-form-item label="业主单位数据采集状态:" prop="enterpriseUnitDataStatus">
+                <el-select v-model="unit.enterpriseUnitDataStatus" size="mini" filterable placeholder="请选择">
+                    <el-option v-for="item in enterpriseUnitDataStatusList" :key="item.id" :label="item.name" :value="item.id">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="业主单位服务模式:" prop="enterpriseUnitServiceModel">
+                <el-select v-model="unit.enterpriseUnitServiceModel" size="mini" filterable placeholder="请选择" disabled>
+                    <el-option v-for="item in enterpriseUnitServiceModelList" :key="item.id" :label="item.name" :value="item.id">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="业主单位接入渠道:" prop="enterpriseUnitAccessChannel">
+                <el-select v-model="unit.enterpriseUnitAccessChannel" size="mini" filterable placeholder="请选择" disabled>
+                    <el-option v-for="item in enterpriseUnitAccessChannelList" :key="item.id" :label="item.name" :value="item.id">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="业主单位企业种类:" prop="enterpriseUnitType">
+                <el-select v-model="unit.enterpriseUnitType" size="mini" filterable placeholder="请选择" @change="changeEnterpriseUnitType($event)" disabled>
+                    <el-option v-for="item in enterpriseUnitTypeList" :key="item.id" :label="item.name" :value="item.id">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="公司类型:" prop="enterpriseCompanyType">
+                <el-select :disabled="enterpriseCompanyTypeDisabled" v-model="unit.enterpriseCompanyType" size="mini" filterable placeholder="请选择" disabled>
+                    <el-option v-for="item in enterpriseCompanyTypeList" :key="item.id" :label="item.name" :value="item.id">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="加盟类型:" prop="joinType">
+                <el-select v-model="unit.joinType" size="mini" filterable placeholder="请选择" disabled>
+                    <el-option v-for="item in joinTypeList" :key="item.id" :label="item.name" :value="item.id">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="状态:" prop="status">
+                <el-select v-model="unit.status" size="mini" filterable placeholder="请选择" disabled>
+                    <el-option v-for="item of statusList" :key="item.id" :label="item.name" :value="item.id">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item label="业主企业服务开始时间:" prop="enterpriseUnitServiceStartDate">
+                <el-input v-model="unit.enterpriseUnitServiceStartDate" disabled></el-input>
+            </el-form-item>
+            <el-form-item label="业主企业服务结束时间:" prop="enterpriseUnitServiceEndDate">
+                <el-input v-model="unit.enterpriseUnitServiceEndDate" disabled></el-input>
+            </el-form-item>
+            <div class="bottom-button">
+                <el-button @click="onSubmit('unit')" type="primary">保存</el-button>
+                <el-button @click="getData()">重置</el-button>
+            </div>
+            <div style="height: 100px;"></div>
+
+        </el-form>
+
+        <el-form v-else :label-position="labelPosition" inline class="demo-table-expand">
+            <el-form-item label="所属运营中心:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ unit.subCenterName }}</div>
+                    <span class="span-show">{{ unit.subCenterName}}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="单位ID:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ unit.unitId }}</div>
+                    <span class="span-show">{{ unit.unitId }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="单位名称:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ unit.unitName }}</div>
+                    <span class="span-show">{{ unit.unitName }}</span>
+                </el-tooltip>
+            </el-form-item>
+
+            <el-form-item label="省:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ provinceName }}</div>
+                    <span class="span-show">{{ provinceName }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="市:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ cityName }}</div>
+                    <span class="span-show">{{ cityName }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="区:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ countyName }}</div>
+                    <span class="span-show">{{ countyName }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="单位信用代码:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ unit.unitCreditCode }}</div>
+                    <span class="span-show">{{ unit.unitCreditCode }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="单位地址:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ unit.unitAddress }}</div>
+                    <span class="span-show">{{ unit.unitAddress }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="经度:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ unit.unitPointX }}</div>
+                    <span class="span-show">{{ unit.unitPointX }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="纬度:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ unit.unitPointY }}</div>
+                    <span class="span-show">{{ unit.unitPointY }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="鸟瞰图:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ unit.aerialviewImg }}</div>
+                    <span class="span-show">{{ unit.aerialviewImg }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="建筑面积（㎡）:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ unit.buildArea }}</div>
+                    <span class="span-show">{{ unit.buildArea }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="法人姓名:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ unit.legalperson }}</div>
+                    <span class="span-show">{{ unit.legalperson }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="法人联系方式:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ unit.legalpersonTel }}</div>
+                    <span class="span-show">{{ unit.legalpersonTel }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="消防安全责任人:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ unit.personliable }}</div>
+                    <span class="span-show">{{ unit.personliable }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="消防安全责任人联系方式:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ unit.personliableTel }}</div>
+                    <span class="span-show">{{ unit.personliableTel }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="消防安全管理人:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ unit.contacts }}</div>
+                    <span class="span-show">{{ unit.contacts }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="消防安全管理人联系方式:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ unit.contactsTel }}</div>
+                    <span class="span-show">{{ unit.contactsTel }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="维保单位:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ unit.maintenanceUnit }}</div>
+                    <span class="span-show">{{ unit.maintenanceUnit }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="维保单位联系方式:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ unit.maintenanceTel }}</div>
+                    <span class="span-show">{{ unit.maintenanceTel }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="业主单位数据采集状态:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ enterpriseUnitDataStatusName }}</div>
+                    <span class="span-show">{{ enterpriseUnitDataStatusName }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="业主单位服务模式:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ enterpriseUnitServiceModelName }}</div>
+                    <span class="span-show">{{enterpriseUnitServiceModelName }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="业主单位接入渠道:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ enterpriseUnitAccessChannelName }}</div>
+                    <span class="span-show">{{ enterpriseUnitAccessChannelName }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="业主单位企业种类:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{yzdwzlLabel(unit.enterpriseUnitType)}}</div>
+                    <span class="span-show">{{ yzdwzlLabel(unit.enterpriseUnitType)}}</span>
+                </el-tooltip>
+            </el-form-item>
+
+            <el-form-item label="公司类型:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ gslxLabel(unit.enterpriseCompanyType) }}</div>
+                    <span class="span-show">{{  gslxLabel(unit.enterpriseCompanyType) }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="加盟类型:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ jmlxLabel(unit.joinType)}}</div>
+                    <span class="span-show">{{jmlxLabel(unit.joinType) }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="状态:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ showLabel(unit.status) }}</div>
+                    <span class="span-show">{{ showLabel(unit.status)  }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="业主企业服务开始时间:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ unit.enterpriseUnitServiceStartDate }}</div>
+                    <span class="span-show">{{ unit.enterpriseUnitServiceStartDate }}</span>
+                </el-tooltip>
+            </el-form-item>
+            <el-form-item label="业主企业服务结束时间:">
+                <el-tooltip>
+                    <div slot="content" class="tips">{{ unit.enterpriseUnitServiceEndDate }}</div>
+                    <span class="span-show">{{ unit.enterpriseUnitServiceEndDate }}</span>
+                </el-tooltip>
+            </el-form-item>
+
+            <div style="height: 100px;"></div>
+        </el-form>
+    </div>
+</template>
+<script>
+    import api from '~/config/http';
+    import inputExcel from "~/components/execl";
+    import importUpload from "~/components/upload/importUpload";
+    export default {
+        name:'Company',
+        props:['facilitiesInData'],
+        components: {
+            inputExcel,
+            importUpload
+        },
+        data(){
+            return{
+                labelPosition:'top',
+                dialogExcelVisible:false,
+                operationCenterList:[],//运营中心列表
+                provinceList:[],//省
+                provinceName:null,
+                cityList:[],//市
+                cityName:null,
+                countyList:[],//区
+                countyName:null,
+                enterpriseUnitServiceModelList:[//业主单位服务模式
+                    // {id:"0",name:"免费模式"},
+                    // {id:"1",name:"基础安全模式"},
+                    // {id:"2",name:"高级安全模式"},
+                    // {id:"3",name:"全托管模式"}
+                ],
+                enterpriseUnitServiceModelName:null,
+                enterpriseUnitAccessChannelList:[//业主单位接入渠道
+                    {id:"0",name:"直接发展"},
+                    {id:"1",name:"合作伙伴"}
+                ],
+                enterpriseUnitAccessChannelName:null,
+                enterpriseUnitDataStatusList:[//业主单位数据采集状
+                    {id:"0",name:"待采集"},
+                    {id:"1",name:"采集中"},
+                    {id:"2",name:"已完成"}
+                ],
+                enterpriseUnitDataStatusName:null,
+                enterpriseUnitTypeList:[//业主单位企业种类
+                    {id:"01",name:"单一型"},
+                    {id:"02",name:"集团型"}
+                ],
+                enterpriseUnitTypeName:null,
+                enterpriseCompanyTypeList:[//公司类型
+                    {id:"0",name:"总公司"},
+                    {id:"1",name:"分公司"}
+                ],
+                enterpriseCompanyTypeName:null,
+                joinTypeList:[
+                    {id:"0",name:"系统注册 "},
+                    {id:"1",name:"APP注册"}
+                ],
+                statusList:[
+                    {id:"0",name:"正常"},
+                    {id:"1",name:"停用"},
+                    {id:"2",name:"删除"},
+                    {id:"9",name:"待启用"}
+                ],
+                joinTypeName:null,
+                enterpriseCompanyTypeDisabled:false,
+                unit:{},
+                dateTimeScopeValue:[],//时间范围
+                modifyFlag:false,
+                select:[],
+                selectVal:'',
+                fileName:{},
+                uploadVal:{}
+            }
+        },
+        mounted() {
+            this.userId = api.getGlobalVal('userObj').id;
+            this.roleName = api.getGlobalVal('userObj').userAuthList[0].authRoleList[0].roleName;
+            this.findOrgListByRole();
+            this.findDistrict('000000',1);
+            this.getData();
+            this.getServerModel();
+        },
+        methods:{
+            //将任务类型和任务状态对应的中文显示出来
+            showLabel(value) {
+                if(value == '0'){
+                    return '在用'
+                }
+                if(value == '1'){
+                    return '停用'
+                }
+                if(value == '2'){
+                    return '删除'
+                }
+                if(value == '9'){
+                    return '待启用'
+                }
+            },
+            jmlxLabel(value) {
+                if(value == '' || value == null){
+                    return
+                }
+                if(value == '0'){
+                    return '系统注册'
+                }
+                if(value == '1'){
+                    return 'APP注册'
+                }
+            },
+            gslxLabel(value) {
+                if(value == '' || value == null){
+                    return
+                }
+                if(value == '0'){
+                    return '总公司'
+                }
+                if(value == '1'){
+                    return '分公司'
+                }
+            },
+            yzdwzlLabel(value) {
+                if(value == '' || value == null){
+                    return
+                }
+                if(value == '01'){
+                    return '单一型'
+                }
+                if(value == '02'){
+                    return '集团型'
+                }
+            },
+
+            modifyFlagFn(){
+                var that = this;
+                that.modifyFlag = !that.modifyFlag;
+                that.getData();
+            },
+            setImport(data){
+                var that = this;
+                that.dialogExcelVisible=false;
+                that.getData();
+            },
+            dialogShow(){
+                this.dialogExcelVisible=true;
+                this.uploadVal={
+                    fileId: this.facilitiesInData.fileId,
+                    TabName:'单位'
+                }
+            },
+            getServerModel(){
+                this.isLoading = true;
+                //enterpriseUnitServiceModelList
+                api.get("/remoteApi/tool/unit/getServerModel").then(res=>{
+                    this.isLoading = false;
+                    if (res && res.code === "success") {
+                        this.enterpriseUnitServiceModelList = res.data;
+                    }else{
+                        console.log('数据获取失败。。。。。')
+                    }
+                }).catch(err => {
+                    console.log(err);
+                    this.isLoading = false;
+                })
+
+            },
+            //获取单位数据
+            getData(){
+                this.isLoading = true;
+                api.get("/remoteApi/tool/unit/findUnitByUnitId?unitId="+this.facilitiesInData.unitId).then(res => {
+                    this.isLoading = false;
+                    if (res && res.code === "success") {
+                        this.unit=res.data;
+                        if(null!=this.unit.province && ""!=this.unit.province){
+                            //加载市数据
+                            this.findDistrict(this.unit.province,2)
+                        }
+                        if(null!=this.unit.city && ""!=this.unit.city){
+                            //加载区县数据
+                            this.findDistrict(this.unit.city,3)
+                        }
+                        if(this.unit.enterpriseUnitType=='01'){//单一型
+                            this.unit.enterpriseCompanyType=null;
+                            this.enterpriseCompanyTypeDisabled=true;
+                        }
+                        let startDate=this.unit.enterpriseUnitServiceStartDate.replace(/-/g,'/');
+                        let endDate=this.unit.enterpriseUnitServiceEndDate.replace(/-/g,'/');
+                        this.dateTimeScopeValue.push(new Date(startDate));
+                        this.dateTimeScopeValue.push(new Date(endDate));
+                        let districtList=[];
+                        districtList.push(this.unit.province);
+                        districtList.push(this.unit.city);
+                        districtList.push(this.unit.county);
+                        //省市区行政区名称查询
+                        this.findDistrictNameListByCode(districtList.join(","));
+                        this.enterpriseUnitServiceModelName=this.enterpriseUnitServiceModelList.find(res=>res.id==this.unit.enterpriseUnitServiceModel).name;
+                        this.enterpriseUnitAccessChannelName=this.enterpriseUnitAccessChannelList.find(res=>res.id==this.unit.enterpriseUnitAccessChannel).name;
+                        this.enterpriseUnitDataStatusName=this.enterpriseUnitDataStatusList.find(res=>res.id==this.unit.enterpriseUnitDataStatus).name;
+                        this.enterpriseUnitTypeName=this.enterpriseUnitTypeList.find(res=>res.id==this.unit.enterpriseUnitType).name;
+                        this.enterpriseCompanyTypeName=this.enterpriseCompanyTypeList.find(res=>res.id==this.unit.enterpriseCompanyType).name;
+                        this.joinTypeName=this.joinTypeList.find(res=>res.id==this.unit.joinType).name;
+                    } else {
+                        console.log('数据获取失败。。。。。')
+                    }
+                })
+                    .catch(err => {
+                        console.log(err);
+                        this.isLoading = false;
+                    })
+            },
+            //所属运营中心
+            findOrgListByRole() {
+                this.isLoading = true;
+                api.post("/remoteApi/tool/org/findOrgListByRole", {
+                    userId: this.userId,
+                    roleName: this.roleName,
+                }).then(res => {
+                    if (res && res.code === "success") {
+                        this.isLoading = false;
+                        this.operationCenterList = res.data;
+                    } else {
+                        //console.log('没有数值。。。。。')
+                    }
+                })
+                    .catch(err => {
+                        console.log(err);
+                        this.isLoading = false;
+                    })
+            },
+            //行政区域数据加载
+            findDistrict(parentCode,level){
+                this.isLoading = true;
+                api.post("/remoteApi/tool/district/queryDistrictByParentCode", {
+                    parentCode: parentCode
+                }).then(res => {
+                    if (res && res.code === "success") {
+                        this.isLoading = false;
+                        switch(level){
+                            case 1:
+                                this.provinceList=res.data;
+                                break;
+                            case 2:
+                                this.cityList=res.data;
+                                break;
+                            case 3:
+                                this.countyList=res.data;
+                                break;
+                        }
+                    } else {
+                        console.log('没有数据。。。。。')
+                    }
+                })
+                    .catch(err => {
+                        console.log(err);
+                        this.isLoading = false;
+                    })
+            },
+            //省市区名称查询
+            findDistrictNameListByCode(districtCode) {
+                this.isLoading = true;
+                api.post("/remoteApi/tool/district/queryDistrictNameListByCode", {
+                    districtCode: districtCode
+                }).then(res => {
+                    this.isLoading = false;
+                    if (res && res.code === "success") {
+                        this.provinceName=(null!=res.data && res.data.length>=1)?res.data[0]:null;
+                        this.cityName=(null!=res.data && res.data.length>=2)?res.data[1]:null;
+                        this.countyName=(null!=res.data && res.data.length>=3)?res.data[2]:null;
+                    } else {
+                        console.log('没有数据。。。。。')
+                    }
+                })
+                    .catch(err => {
+                        console.log(err);
+                        this.isLoading = false;
+                    })
+            },
+            //省级联动
+            changeCityCounty(){
+                this.cityList=[];
+                this.countyList=[];
+                this.unit.city=null;
+                this.unit.county=null;
+                this.findDistrict(this.unit.province,2);
+            },
+            //市级联动
+            changeCounty(){
+                this.countyList=[];
+                this.unit.county=null;
+                this.findDistrict(this.unit.city,3);
+            },
+            //业主单位企业种类联动
+            changeEnterpriseUnitType(event){
+                if(event=='01'){
+                    this.unit.enterpriseCompanyType=null;
+                    this.enterpriseCompanyTypeDisabled=true;
+                }else{
+                    this.enterpriseCompanyTypeDisabled=false;
+                }
+            },
+            // getResult事件方法
+            getMyExcelData(data,tab,file) {
+                //处理你的数据
+                // console.log(data)
+                // console.log(tab)
+                this.fileName = file;
+                for( var i=0; i<tab.length; i++){
+                    this.select.push({
+                        label: tab[i],
+                        value: tab[i]
+                    })
+                }
+                console.log(this.select)
+            },
+            //修改提交
+            onSubmit(formName) {
+                var that=this;
+                var reg=/^[0-9]+.?[0-9]*$/;
+                if((null!=that.unit.unitPointX )&& (''!=that.unit.unitPointX) && (undefined !=that.unit.unitPointX) && !reg.test(that.unit.unitPointX)){
+                    debugger
+                    that.$message({
+                        message: "经度验证异常,请输入数字",
+                        type: "error"
+                    });
+                    return;
+                }
+                if((null!=that.unit.unitPointY )&& (''!=that.unit.unitPointY) && (undefined !=that.unit.unitPointY) && !reg.test(that.unit.unitPointY)){
+                    that.$message({
+                        message: "纬度验证异常,请输入数字",
+                        type: "error"
+                    });
+                    return;
+                }
+                if((null!=that.unit.buildArea )&& (''!=that.unit.buildArea) && (undefined !=that.unit.buildArea) && !reg.test(that.unit.buildArea)){
+                    that.$message({//buildArea
+                        message: "建筑面积验证异常,请输入数字",
+                        type: "error"
+                    });
+                    return;
+                }
+                //颜色
+                this.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        //时间格式化工具
+                        Date.prototype.format = function (fmt) {
+                            var o = {
+                                "M+": this.getMonth() + 1, //月份
+                                "d+": this.getDate(), //日
+                                "h+": this.getHours(), //小时
+                                "m+": this.getMinutes(), //分
+                                "s+": this.getSeconds(), //秒
+                                "q+": Math.floor((this.getMonth() + 3) / 3), //季度
+                                S: this.getMilliseconds() //毫秒
+                            };
+                            if (/(y+)/.test(fmt)) {
+                                fmt = fmt.replace(
+                                    RegExp.$1,
+                                    (this.getFullYear() + "").substr(4 - RegExp.$1.length)
+                                );
+                            }
+                            for (var k in o) {
+                                if (new RegExp("(" + k + ")").test(fmt)) {
+                                    fmt = fmt.replace(
+                                        RegExp.$1,
+                                        RegExp.$1.length == 1
+                                            ? o[k]
+                                            : ("00" + o[k]).substr(("" + o[k]).length)
+                                    );
+                                }
+                            }
+                            return fmt;
+                        };
+                        //日期
+                        if(that.dateTimeScopeValue!=null && that.dateTimeScopeValue.length==2){
+                            that.unit.enterpriseUnitServiceStartDate=that.dateTimeScopeValue[0].format("yyyy-MM-dd hh:mm:ss");
+                            that.unit.enterpriseUnitServiceEndDate=that.dateTimeScopeValue[1].format("yyyy-MM-dd hh:mm:ss");
+                        }
+                        that.unit.updateUserId=that.userId;
+                        that.isLoading = true;
+                        that.unit.trailId =  that.facilitiesInData.id;
+                        api.post("/remoteApi/tool/unit/updateUnitByUnitId",that.unit).then(res => {
+                            that.isLoading = false;
+                            if (res && res.code === "success") {
+                                that.$message({
+                                    message: "更新成功",
+                                    type: "success"
+                                });
+                                that.getData();//重新获取表格
+                                that.modifyFlag=false;//关闭手动修改
+                            } else {
+                                that.$message({
+                                    message: "更新失败",
+                                    type: "error"
+                                });
+                            }
+                        })
+                            .catch(err => {
+                                console.log(err);
+                                this.isLoading = false;
+                            })
+                    } else {
+                        console.log('error submit!!');
+                        return false;
+                    }
+                });
+            }
+        }
+    }
+</script>
+<style lang="scss" scoped>
+    .company-wrapper {
+        font-size: 0;
+        text-align: left;
+        height: calc(100vh - 138px);
+        overflow-x: hidden;
+        overflow-y: auto;
+        .top-button,
+        .bottom-button {
+            text-align: left;
+            padding: 0 15px 10px 0;
+            //border-bottom: 1px dashed #dcdcdc;
+            margin-left:25px;
+            margin-bottom: 10px;
+        }
+        .bottom-button {
+            padding: 15px 15px 10px 0;
+            //border-top: 1px dashed #dcdcdc;
+            border-bottom: none;
+        }
+
+        /deep/.demo-table-expand {
+            font-size: 0;
+            .el-form-item {
+                margin-right: 0;
+                margin-bottom: 0;
+                width: 30.3%;
+                box-sizing: border-box;
+                padding: 0 1.5%;
+                label {
+                    width: 100%;
+                    text-align: left;
+                    padding-left: 5px;
+                    padding-bottom:0;
+                    color: #99a9bf;
+                    display: inline-block;
+                }
+                .el-form-item__content {
+                    height: 43px;
+                    width: calc(100% - 20px);
+                    .span-show {
+                        height: 32px;
+                        display: inline-block;
+                        width: auto;
+                        max-width: 100%;
+                        overflow: hidden;
+                        white-space: nowrap;
+                        text-overflow: ellipsis;
+                    }
+                }
+            }
+        }
+    }
+    .tips {
+        width: auto;
+        max-width: 250px;
+        line-height: 16px;
+    }
+
+</style>
+

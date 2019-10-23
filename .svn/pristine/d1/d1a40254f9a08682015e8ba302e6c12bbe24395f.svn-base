@@ -1,0 +1,511 @@
+
+<template>
+  <div>
+    <!-- <div class="l-head">
+      面包屑
+      <Title/>
+    </div>-->
+    <div class="right-main-warpper">
+      <div class="h2-title-wrap">
+        <h2 class="tilte-h2">日志管理</h2>
+      </div>
+      <div class="main-top-header">
+        <el-form label-position="left" :model="logForm" inline class="expend-serch">
+          <el-form-item label="运营中心:">
+            <el-select
+              v-model="logForm.orgCode"
+              size="mini"
+              filterable
+              placeholder="全部"
+              @change="changeoperationCenter"
+            >
+              <el-option
+                v-for="item in logForm.operationCenter"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="单位:">
+            <el-select v-model="logForm.unitId" size="mini" filterable placeholder="全部">
+              <el-option
+                v-for="item in logForm.units"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="操作类型:">
+            <el-select v-model="logForm.operaFlag" size="mini" filterable placeholder="全部">
+              <el-option
+                v-for="item in logForm.types"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="操作人:">
+            <el-input v-model="logForm.operationPerson"></el-input>
+          </el-form-item>
+          <el-form-item label="操作时间:" style="width:40%;">
+            <el-date-picker
+              v-model.trim="logForm.DataSelect"
+              type="datetimerange"
+              range-separator=" 至"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+            ></el-date-picker>
+          </el-form-item>
+          <el-form-item label class="t-right" style="    width: 60%;
+    text-align: right;">
+            <el-button type="primary" @click="handleFind">查找</el-button>
+            <el-button class="mag-right-10" @click="reSet">重置</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+      <!--列表-->
+      <el-row class="body">
+        <div class="userNotab">
+          <el-table
+            ref="table"
+            :data="table"
+            stripe
+            style="width: 100%;padding:0"
+            show-overflow-tooltip
+            v-loading="isLoading"
+          >
+            <el-table-column
+              label="操作人"
+              prop="userName"
+              show-overflow-tooltip
+              align="center"
+              min-width="10%"
+            ></el-table-column>
+            <el-table-column
+              label="运营中心"
+              prop="orgName"
+              show-overflow-tooltip
+              align="center"
+              min-width="10%"
+            ></el-table-column>
+            <el-table-column
+              label="单位"
+              prop="unitName"
+              show-overflow-tooltip
+              align="center"
+              min-width="10%"
+            ></el-table-column>
+            <el-table-column label="操作类型" prop="operaFlag" align="center" min-width="10%">
+              <template slot-scope="scope">
+                <div>{{transformState(scope.row.operaFlag) }}</div>
+              </template>
+            </el-table-column>
+            <el-table-column label="描述" align="center" min-width="10%">
+              <template slot-scope="scope">
+                <el-popover trigger="hover" placement="top">
+                  <p class="ms-layer">{{ scope.row.dataJson ? scope.row.dataJson :"暂无数据"}}</p>
+                  <div slot="reference" class="dri-wrapper">{{ scope.row.dataJson }}</div>
+                </el-popover>
+              </template>
+            </el-table-column>
+
+            <el-table-column
+              label="操作时间"
+              prop="createdTime"
+              show-overflow-tooltip
+              align="center"
+              min-width="10%"
+            ></el-table-column>
+          </el-table>
+          <Pagination
+            :widgetInfo="widgetInfo"
+            v-on:sonHandleCurrentChange="sonHandleCurrentChange"
+          />
+        </div>
+      </el-row>
+    </div>
+  </div>
+</template>
+
+<script>
+import api from "~/config/http";
+import Mock from "mockjs";
+import Title from "~/components/Title";
+import Pagination from "~/components/Pagination";
+// import qs from "qs";
+import "~/assets/css/style.css";
+import "~/assets/css/ggicon.css";
+/* 本地数据开始 */
+
+export default {
+  props: {
+    action: "",
+    label: "logName"
+  },
+  components: {
+    Title,
+    Pagination
+  },
+  data() {
+    return {
+      isLoading: false,
+      userId: "",
+      roleName: "",
+      isShow: false, //对话框
+      isFind: true, //查询
+      formLabelWidth: "120px",
+      table: [],
+      logForm: {
+        orgCode: "", //选中所属运营中心
+        operationPerson: "",
+        operationCenter: [
+          {
+            label: "全部",
+            value: ""
+          }
+        ],
+        unitId: "",
+        units: [
+          {
+            value: "",
+            label: "全部"
+          }
+        ],
+        operaFlag: "", //操作类型
+        types: [
+          {
+            value: "",
+            label: "全部"
+          },
+          {
+            value: 1,
+            label: "建档"
+          },
+          {
+            value: 2,
+            label: "单条删除"
+          },
+          {
+            value: 3,
+            label: "单条修改"
+          },
+          {
+            value: 4,
+            label: "批量删除"
+          },
+          {
+            value: 5,
+            label: "批量修改"
+          },
+          {
+            value: 6,
+            label: "同步"
+          },
+          {
+            value: 7,
+            label: "回滚"
+          }
+        ],
+        DataSelect: "",
+        startTime: "",
+        endTime: ""
+      },
+      pageNo: 1,
+      pageSize: 15,
+      total: 0,
+      widgetInfo: {
+        pageSize: 10,
+        pageNo: 1,
+        total: 0
+      }
+    };
+  },
+  computed: {
+    transformState() {
+      return function(type) {
+        if (type == "0") {
+          return "建档";
+        } else if (type == "1") {
+          return "新增";
+        } else if (type == "2") {
+          return "单条删除";
+        } else if (type == "3") {
+          return "单条修改";
+        } else if (type == "4") {
+          return "批量删除";
+        } else if (type == "5") {
+          return "批量修改";
+        } else if (type == "6") {
+          return "同步";
+        } else if (type == "7") {
+          return "回滚";
+        }
+      };
+    }
+  },
+
+  mounted() {
+    //运营中心
+    this.findOrgListByRole();
+    //默认全部单位
+    this.findUnitByRole();
+  },
+
+  methods: {
+    getTableData(orgCode, unitId, createdBy, startTime, endTime, operaFlag) {
+      this.isLoading = true;
+      api
+        .post("/remoteApi/tool/operation/findRecordOperationRecordList", {
+          subCenterCode: orgCode,
+          unitId: unitId,
+          createdBy: createdBy,
+          startTime: startTime,
+          endTime: endTime,
+          operaFlag: operaFlag,
+          pageNo: this.widgetInfo.pageNo,
+          pageSize: this.widgetInfo.pageSize
+        })
+        .then(res => {
+          if (res && res.code === "success") {
+            this.isLoading = false;
+            this.table = res.data.rows;
+            this.widgetInfo.total =
+              res.data.total === null ? 0 : res.data.total;
+          } else {
+            this.table = [];
+            this.widgetInfo.list = res.data.rows;
+            this.widgetInfo.total = 0;
+            console.log("没有数值。。。。。");
+          }
+        });
+    },
+    //所属运营中心
+    findOrgListByRole() {
+      this.isLoading = true;
+      api
+        .post("/remoteApi/tool/org/findOrgListByRole", {
+          userId: api.getGlobalVal("userObj").id,
+          roleName: api.getGlobalVal("userObj").userAuthList[0].authRoleList[0]
+            .roleName
+        })
+        .then(res => {
+          if (res && res.code === "success") {
+            this.isLoading = false;
+            var list = res.data;
+            for (var key in list) {
+              var temp = {};
+              temp.value = list[key].orgCode;
+              temp.label = list[key].orgName;
+              this.logForm.operationCenter.push(temp);
+            }
+            this.logForm.orgCode = "";
+          } else {
+            this.table = [];
+            console.log("没有数值。。。。。");
+          }
+        })
+        .catch(err => {
+          console.log(err);
+          this.isLoading = false;
+        });
+    },
+    //联动单位
+    changeoperationCenter() {
+      this.logForm.units = [
+        {
+          label: "全部",
+          value: ""
+        }
+      ];
+      this.logForm.unitId = "";
+      api
+        .post("/remoteApi/tool/unit/findUnitByOrgCode", {
+          orgCode: this.logForm.orgCode
+        })
+        .then(res => {
+          if (res && res.code === "success") {
+            this.isLoading = false;
+            var list = res.data;
+            for (var key in list) {
+              var temp = {};
+              temp.value = list[key].unitId;
+              temp.label = list[key].unitName;
+              this.logForm.units.push(temp);
+            }
+          } else {
+            this.logForm.units = [];
+          }
+        });
+    },
+    //默认全部单位
+    findUnitByRole() {
+      api
+        .post("/remoteApi/tool/unit/findUnitByRole", {
+          userId: api.getGlobalVal("userObj").id,
+          roleName: api.getGlobalVal("userObj").userAuthList[0].authRoleList[0]
+            .roleName
+        })
+        .then(res => {
+          if (res && res.code === "success") {
+            this.isLoading = false;
+            var list = res.data;
+            for (var key in list) {
+              var temp = {};
+              temp.value = list[key].unitId;
+              temp.label = list[key].unitName;
+              this.logForm.units.push(temp);
+            }
+          } else {
+            this.logForm.units = [];
+          }
+        });
+    },
+    //查询
+    handleFind() {
+      this.isFind = !this.isFind;
+      this.pageNo = 1;
+      if (this.logForm.DataSelect == "") {
+        this.logForm.startTime = "";
+        this.logForm.endTime = "";
+      } else {
+        // --时间处理
+        this.logForm.startTime = this.logForm.DataSelect[0];
+        this.logForm.endTime = this.logForm.DataSelect[1];
+      }
+      this.getTableData(
+        this.logForm.orgCode,
+        this.logForm.unitId,
+        this.logForm.createdBy,
+        this.logForm.startTime,
+        this.logForm.endTime,
+        this.logForm.operaFlag
+      );
+    },
+    //重置
+    reSet() {
+      this.isFind = !this.isFind;
+      this.pageNo = 1;
+      this.logForm.orgCode = "";
+      this.unitId = "";
+      this.logForm.createdBy = "";
+      this.logForm.startTime = "";
+      this.logForm.endTime = "";
+      this.logForm.operaFlag = "";
+      this.getTableData();
+    },
+
+    sonHandleCurrentChange(widgetInfo) {
+      this.widgetInfo.pageSize = widgetInfo.pageSize
+        ? parseInt(widgetInfo.pageSize)
+        : this.widgetInfo.pageSize;
+      this.widgetInfo.pageNo = widgetInfo.pageNo
+        ? parseInt(widgetInfo.pageNo)
+        : this.widgetInfo.pageNo;
+      this.getTableData();
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import "~/assets/css/table.scss";
+
+.el-tree--highlight-current .el-tree-node.is-current > .el-tree-node__content {
+  background: rgba(32, 160, 255, 0.5) !important;
+}
+
+.el-container {
+  height: calc(100vh - 125px);
+  overflow: hidden;
+
+  .el-main {
+    position: relative;
+    background-color: #fff;
+    color: #333;
+    border: 1px solid #bfcbd9;
+    margin: 10px 0 0 0;
+    padding: 0;
+    height: calc(100vh - 78px - 70px);
+    text-align: left;
+    .body {
+      .userNotab {
+        border: none;
+        height: auto;
+        > div:first-child {
+          height: auto;
+        }
+        .el-pagination {
+          // text-align: right;
+          height: 100%;
+        }
+      }
+    }
+
+    .table-row {
+      height: 46px;
+    }
+  }
+}
+.el-tooltip__popper.is-dark {
+  max-width: 300px;
+}
+.dri-wrapper {
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+.el-popover {
+  max-height: 500px;
+  overflow-y: height;
+}
+.el-date-editor--datetimerange {
+  width: 90% !important;
+}
+
+/deep/.el-table {
+  .el-table__body-wrapper {
+    height: calc(100vh - 90px - 60px - 140px - 100px);
+    overflow-y: auto;
+  }
+}
+
+/deep/.expend-serch {
+  text-align: left;
+  font-size: 0;
+  .el-form-item {
+    width: 25%;
+    margin-right: 0;
+    font-size: 14px;
+    label {
+      width: 82px;
+      text-align: right;
+    }
+    .el-form-item__content {
+      width: calc(100% - 92px);
+      .el-select {
+        width: 100%;
+      }
+    }
+  }
+}
+.ms-layer {
+  width: 300px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.t-right {
+  text-align: right;
+}
+.mag-right-10 {
+  margin-right: 10px;
+}
+/deep/.dri-wrapper {
+  width: 100%;
+  height: auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+</style>

@@ -1,0 +1,928 @@
+<template>
+  <div>
+    <div class="right-main-warpper">
+      <div class="h2-title-wrap">
+        <h2 class="tilte-h2">任务记录</h2>
+        <div class="title-btn-wrap">
+          <!--          超级管理员-->
+          <template v-if="roleName =='超级管理员'">
+            <el-button
+                    type="success"
+                    v-if="showButton([1],facilitiesInData.recordStatus) "
+                    icon="el-icon-check"
+                    @click="editorInfo('1')"
+            >通过</el-button>
+            <el-button
+                    type="danger"
+                    v-if="showButton([1,3,7],facilitiesInData.recordStatus) "
+                    icon="el-icon-close"
+                    @click="editorInfo('2')"
+            >驳回</el-button>
+            <el-button
+                    type="primary"
+                    v-if="showButton([2,4],facilitiesInData.recordStatus) "
+                    icon="el-icon-edit"
+                    @click="handleEdit()"
+            >修改任务</el-button>
+            <el-button
+                    type="success"
+                    v-if="showButton([2,4,5,6],facilitiesInData.recordStatus) "
+                    icon="el-icon-document-add"
+                    @click="setRcordStatus(1,1)"
+            >提交审核</el-button>
+            <el-button
+                    type="primary"
+                    v-if="showButton([3],facilitiesInData.recordStatus) "
+                    icon="el-icon-user"
+                    @click="fenpaiFun"
+            >分派</el-button>
+            <el-button
+                    type="primary"
+                    v-if="showButton([5,6,7],facilitiesInData.recordStatus) "
+                    icon="el-icon-edit-outline"
+                    @click="jumpEditAll"
+            >编辑档案/标点</el-button>
+            <el-button
+                    type="success"
+                    v-if="showButton([7],facilitiesInData.recordStatus) "
+                    icon="el-icon-finished"
+                    v-loading.fullscreen.lock="loading"
+                    @click="setRcordStatus(2,1)"
+            >同步</el-button>
+<!--            <el-button-->
+<!--                    type="success"-->
+<!--                    v-if="showButton([8,9],facilitiesInData.recordStatus) "-->
+<!--                    icon="el-icon-finished"-->
+<!--                    v-loading.fullscreen.lock="loading"-->
+<!--                    @click="dataCallBack"-->
+<!--                    :disabled="callbackFlag"-->
+<!--            >回滚</el-button>-->
+          </template>
+          <!--          审核人员-->
+          <template v-if="roleName =='审核人员'">
+            <el-button
+                    type="success"
+                    v-if="showButton([1],facilitiesInData.recordStatus) "
+                    icon="el-icon-check"
+                    @click="editorInfo('1')"
+            >通过</el-button>
+            <el-button
+                    type="danger"
+                    v-if="showButton([1],facilitiesInData.recordStatus) "
+                    icon="el-icon-close"
+                    @click="editorInfo('2')"
+            >驳回</el-button>
+
+          </template>
+          <!--          分派人员-->
+          <template v-if="roleName =='分派人员'">
+            <el-button
+                    type="primary"
+                    v-if="showButton([3],facilitiesInData.recordStatus) "
+                    icon="el-icon-user"
+                    @click="dialogFenpaiVisible = true"
+            >分派</el-button>
+            <el-button
+                    type="danger"
+                    v-if="showButton([3],facilitiesInData.recordStatus) "
+                    icon="el-icon-close"
+                    @click="editorInfo('2')"
+            >驳回</el-button>
+          </template>
+          <!--          提交人员-->
+          <template v-if="roleName =='提交人员'">
+            <el-button
+                    type="primary"
+                    v-if="showButton([2,4],facilitiesInData.recordStatus) "
+                    icon="el-icon-edit"
+                    @click="handleEdit()"
+            >修改任务</el-button>
+            <el-button
+                    type="success"
+                    v-if="showButton([2,4],facilitiesInData.recordStatus) "
+                    icon="el-icon-document-add"
+                    @click="setRcordStatus(1,1)"
+            >提交审核</el-button>
+          </template>
+          <!--          建档人员-->
+          <template v-if="roleName =='建档人员'">
+            <el-button
+                    type="success"
+                    v-if="showButton([5,6],facilitiesInData.recordStatus) "
+                    icon="el-icon-document-add"
+                    @click="setRcordStatus(1,1)"
+            >提交审核</el-button>
+            <el-button
+                    type="primary"
+                    v-if="showButton([5,6],facilitiesInData.recordStatus) "
+                    icon="el-icon-edit-outline"
+                    @click="jumpEditAll"
+            >编辑档案/标点</el-button>
+          </template>
+          <el-button
+                  type="primary"
+                  @click="handleDown()"
+                  icon="el-icon-files"
+
+          >附件</el-button>
+          <nuxt-link :to="{name:'PatrolPlan-FacilitiesInspection'}">&lt;&lt;返回</nuxt-link>
+
+        </div>
+      </div>
+      <div class="newTable">
+        <!-- 表格 -->
+        <el-table
+                ref="table"
+                v-loading="isLoading"
+                :data="tableData"
+                stripe
+        >
+          <el-table-column
+                  align="left"
+                  min-width="15%"
+                  :show-overflow-tooltip="true"
+                  prop="username"
+                  label="操作人"
+          ></el-table-column>
+          <el-table-column
+                  align="left"
+                  min-width="15%"
+                  :show-overflow-tooltip="true"
+                  pageSize="pageSize"
+                  prop="recordStatusName"
+                  label="操作后状态"
+          ></el-table-column>
+
+          <el-table-column
+                  align="left"
+                  min-width="20%"
+                  :show-overflow-tooltip="true"
+                  prop="createdTime"
+                  label="操作时间"
+          ></el-table-column>
+          <el-table-column
+                  align="left"
+                  min-width="10%"
+                  :show-overflow-tooltip="true"
+                  pageSize="pageSize"
+                  label="备注信息"
+          >
+            <template slot-scope="scope">
+              <!--               prop="opinions"-->
+
+            </template>
+            <template slot-scope="scope">
+              <el-button type="text"  :disabled="!scope.row.opinions" @click="toDetail(scope.$index, scope.row)">查看</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <!--分页器-->
+      <!--      <Pagination :widgetInfo="widgetInfo" v-on:sonHandleCurrentChange="sonHandleCurrentChange"/>-->
+    </div>
+    <!-- 分派弹框-->
+    <el-dialog title="分派" :visible.sync="dialogFenpaiVisible" width="300px">
+      <div>
+        <p class="tips-p">(分派后默认通过复核，且建档人不可修改)</p>
+        <div class="fenpai-form">
+          <el-form label-position="top" label-width="100px">
+            <el-form-item
+                    label="指定建档人"
+                    :rules="{required: true, message: '指定建档人不能为空', trigger: 'blur'}"
+            >
+              <el-select v-model="assignment" filterable placeholder="请选择">
+                <el-option
+                        v-for="item in assignmentList"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value"
+                ></el-option>
+              </el-select>
+            </el-form-item>
+          </el-form>
+        </div>
+      </div>
+      <span slot="footer" class="dialog-footer">
+        <el-button type="primary" @click="assignSureHandel()" >确 定</el-button>
+        <el-button @click="dialogFenpaiVisible = false">取 消</el-button>
+      </span>
+    </el-dialog>
+
+    <!-- 编辑弹框-->
+    <el-dialog
+            :close-on-press-escape="false"
+            :close-on-click-modal="false"
+            :before-close="handleCloseEdit"
+            title="编辑"
+            :visible.sync="dialogEditVisible"
+            width="580px">
+      <div class="height-300">
+        <EditUpload
+                ref="myChild"
+                :editUploadData="editUploadData"
+                v-on:saveHandel="saveHandelEdit"></EditUpload>
+      </div>
+    </el-dialog>
+
+<!--    驳回信息 原版-->
+    <el-dialog
+            title="驳回"
+            :visible.sync="dialogVisible"
+            width="440px"
+            :before-close="handleClose">
+      <el-form ref="form">
+        <el-form-item>
+
+          <el-input type="textarea"  v-model="rejectVal" rows="6" placeholder="请输入驳回信息" maxlength="120"
+                    show-word-limit class="input-textarea-diy"></el-input>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+          <el-button @click="handleClose">取 消</el-button>
+          <el-button type="primary" @click="setRcordStatus(3,2)">确 定</el-button>
+      </span>
+    </el-dialog>
+
+<!--查看文本框-->
+    <el-dialog
+            title="备注信息"
+            :visible.sync="show"
+            width="980px"
+            :before-close="handleClose">
+      <div v-html="objhtml" class="objhtml" ref="dialogScoll">
+
+      </div>
+    </el-dialog>
+   <qill-editor-show ref="editorInfo"  @sureEditorBtn="sureEditorBtn"/>
+
+  </div>
+</template>
+<script>
+  import api from "~/config/http";
+  import Title from "~/components/Title";
+  import axios from "axios";
+  import Pagination from "~/components/Pagination";
+  import Upload from "~/components/upload/newAddUpload";
+  import EditUpload from "~/components/upload/editUpload";
+  import OtherUpload from "~/components/upload/otherUpload";
+  import QillEditorShow from "~/components/upload/qill-editor";
+  export default {
+    components: {
+      Title,
+      Pagination,
+      Upload,
+      EditUpload,
+      OtherUpload,
+      QillEditorShow
+    },
+    data() {
+      return {
+        objhtml:null,
+        show:false,
+        editorOption:{
+          modules:{
+            toolbar:[
+              ['bold', 'italic', 'underline'],
+              [{'header': 1}, {'header': 2}],
+              [{'list': 'ordered'}, {'list': 'bullet'}],
+              [{'indent': '-1'}, {'indent': '+1'}],
+              [{'header': [1, 2, 3, 4, 5, 6, false]}],
+              [{'color': []}, {'background': []}],
+              [{'align': []}],
+              ['clean'],
+              ['link', 'image']
+            ]
+          }
+        },
+        title:'驳回',
+        rejectVal: '',
+        assignmentList: [],
+        restaurants: [],
+        assignment: "", //分派
+        dialogFenpaiVisible: false,
+        facilitiesInData: {},
+        selectedOptions: ["1"],
+        dialogEditVisible: false,
+        dialogVisible:false,
+        formLabelWidth: "120px",
+        callbackFlag:false,
+        widgetInfo: {
+          total: null,
+          pageSize: 12,
+          pageNo: 1
+        },
+        tableData: [],
+        isLoading: false,
+        uploadDataVal: {},
+        editUploadData: {},
+        otherUpload: {},
+        roleName: null,
+        roleId: null,
+        userId:null,
+        loading: false,
+        recordStatusList: [
+          {
+            id: "001",
+            value: "",
+            label: "全部"
+          },
+          {
+            id: "002",
+            value: "1",
+            label: "初审中"
+          },
+          {
+            id: "003",
+            value: "2",
+            label: "初审驳回"
+          },
+          {
+            id: "004",
+            value: "3",
+            label: "复审中"
+          },
+          {
+            id: "005",
+            value: "4",
+            label: "复审驳回"
+          },
+          {
+            id: "006",
+            value: "5",
+            label: "建档中"
+          },
+          {
+            id: "007",
+            value: "6",
+            label: "建档驳回"
+          },
+          {
+            id: "008",
+            value: "7",
+            label: "建档审核"
+          },
+          {
+            id: "009",
+            value: "8",
+            label: "同步数据"
+          },
+          {
+            id: "010",
+            value: "9",
+            label: "数据回滚"
+          }
+        ],
+        roleNames:'超级管理员,建档人员'
+      };
+    },
+    created() {},
+
+    mounted() {
+      const that = this;
+      //任务列表的缓存
+      that.facilitiesInData = that._Storage.getObj("fileItem", "obj");
+      this.$nextTick(() => {
+        that.roleName = localStorage.getItem("roleName");
+        that.roleId = localStorage.getItem("roleId");
+        that.userId = localStorage.getItem("userId");
+        that.loadData();
+        //分派电子档案
+        // that.assignHandel();
+        if(that.facilitiesInData.recordStatus == '9'){
+          that.callbackFlag=true;
+        }
+        // that.fujianShow();
+      });
+
+
+    },
+    methods: {
+      //判断附件是否存在
+      // fujianShow(){
+      //   this.fujian = this.facilitiesInData.fileUrls ? false : true;
+      //
+      // },
+      sureEditorBtn(data,type){
+        this.rejectVal = data;
+        if(type == '1'){
+          this.setRcordStatus(0,1)
+        }else{
+          this.setRcordStatus(3,2);
+        }
+
+
+      },
+      editorInfo(type){
+        const that = this;
+        that.$refs.editorInfo.init(type);
+      },
+      /**
+       * 查看备注信息
+       * @param index
+       * @param row
+       */
+      toDetail(index,row){
+        this.show = true;
+        this.objhtml = row.opinions;
+        this.$nextTick(() => {
+          this.$refs.dialogScoll.scrollTop = 0;
+        })
+      },
+
+      //分派弹框
+      fenpaiFun(){
+        const that = this;
+        that.dialogFenpaiVisible = true;
+        that.assignHandel();
+      },
+      //编辑弹框关闭
+      handleCloseEdit(){
+        var that = this;
+        that.dialogEditVisible = false;
+        that.$refs.myChild.dataDigEmp()
+
+      },
+      jumpEditAll() {
+        this.$router.push({
+          name: "PatrolPlan-editAll"
+        });
+      },
+      //分派取消
+      handleClose(){
+        this.dialogVisible = false;
+        this.rejectVal = null;
+      },
+      //操作按钮显示的方法
+      showButton(arr, value) {
+        return arr.indexOf(value*1) > -1;
+      },
+      //编辑弹出框保存事件
+      saveHandelEdit(data) {
+        var that = this;
+        that._Storage.setObj("fileItem", "obj",data);
+        that.facilitiesInData = that._Storage.getObj("fileItem", "obj");
+        that.dialogEditVisible = false;
+      },
+      //获取任务列表
+      loadData() {
+        var that = this;
+        that.isLoading = true;
+        let row = that.facilitiesInData;
+        api
+                .post(
+                        "/remoteApi/tool/recordTrial/findRecordTrialRecordList",
+                        {
+                          trialId: that.facilitiesInData.id,
+                        },
+                        5000
+                )
+                .then(res => {
+                  that.isLoading = false;
+                  if (res.code === "success") {
+                    // debugger
+                    that.tableData = res.data;
+                    if(null!=that.tableData && that.tableData.length>0){
+                      that.tableData.forEach(item=>{
+                        item.recordStatusName=that.recordStatusList.find(stateItem=>stateItem.value==item.recordStatus).label;
+                      });
+                      row.recordStatus=that.tableData[that.tableData.length-1].recordStatus;
+                      that._Storage.setObj("fileItem", "obj",row);
+                    }
+
+                  }else{
+
+                  }
+                })
+                .catch(err => {
+                  that.isLoading = false;
+                  that.$message({
+                    type: "warning",
+                    message: err
+                  });
+                  // window.location.reload();
+                });
+      },
+      // 分页
+      sonHandleCurrentChange(widgetInfo) {
+        this.widgetInfo.pageSize = widgetInfo.pageSize
+                ? parseInt(widgetInfo.pageSize)
+                : this.widgetInfo.pageSize;
+        this.widgetInfo.pageNo = widgetInfo.pageNo
+                ? parseInt(widgetInfo.pageNo)
+                : this.widgetInfo.pageNo;
+        this.loadData();
+      },
+      //下载附件
+      handleDown() {
+        this.$confirm("确定要下载吗?", "下载提示", {
+          confirmButtonText: "确定",
+          cancelButtonText: "取消",
+          type: "warning"
+        })
+                .then(() => {
+                  window.open(
+                          "/remoteApi/tool/record/downAttachment?fileId=" +
+                          this.facilitiesInData.id
+                  );
+                })
+                .catch(err => {
+                  this.$message({
+                    type: "warning",
+                    message: "取消下载!"
+                  });
+                });
+      },
+      //编辑
+      handleEdit() {
+        var that = this;
+        let row = that.facilitiesInData;
+        that.dialogEditVisible = true;
+        that.editUploadData = {
+          editVal: {
+            fileUrl: (row.fileUrls != "" && row.fileName != null) ? row.fileUrls.split(",") : null,
+            fileName: (row.fileName != "" && row.fileName != null)? row.fileName.split(",") : null,
+            oprFlag: row.oprFlag,
+            priority: row.priority,
+            describes: row.describes,
+            operationId: row.subCenterCode,
+            unitId: row.unitId,
+            rowId: row.id,
+            recordStatus: row.recordStatus,
+            timestamp:row.timestamp || row.fileTimestamp,
+            trialId:row.id
+          }
+        };
+      },
+
+      //数据回滚
+      dataCallBack(){
+        const that = this;
+        let row = that.facilitiesInData;
+        that.$confirm(
+                "确定要回滚吗?",
+                 "回滚提示",
+                {
+                  confirmButtonText: "确定",
+                  cancelButtonText: "取消",
+                  type: "warning"
+                }
+        ).then(()=>{
+          that.loading = true;
+          api.post("/remoteApi/tool/synchro/commandRollBack",
+                  {
+                    orgCode: row.subCenterCode,
+                    trialId: row.id,
+                    unitId: row.unitId,
+                    userId: api.getGlobalVal("userObj").id,
+                    userName: api.getGlobalVal("userObj").userName,
+                  }, 3600000).then(res => {
+            if (res.code === "success") {
+              // that.updateRecordTrialRecordStatus(that,row,val,operationStatus);
+              that.loading = false;
+              that.$message({
+                type: "success",
+                message: '回滚成功'
+              });
+              row.recordStatus=res.data.recordStatus;
+              that._Storage.setObj("fileItem", "obj",row);
+              row = that._Storage.getObj("fileItem", "obj");
+              that.callbackFlag=true;
+            }else{
+              that.loading = false;
+              that.$message({
+                type: "error",
+                message: res.rspMsg
+              });
+            }
+          }).catch(err => {
+            that.loading = false;
+            that.$message({
+              type: "warning",
+              message: err
+            });
+          });
+        }).catch(err => {
+          that.$message({
+            type: "warning",
+            message: err
+          });
+        })
+      },
+      //更改当前电子档案状态
+      setRcordStatus(val,operationStatus) {
+        const that = this;
+        let row = that.facilitiesInData;
+        var statusVal = ["通过", "提交审核", "同步"  ,"驳回" ,"分派"];
+        that.$confirm(
+                "确定要" + statusVal[val] + "吗?",
+                statusVal[val] + "提示",
+                {
+                  confirmButtonText: "确定",
+                  cancelButtonText: "取消",
+                  type: "warning"
+                }
+        ).then(() => {
+          if(val==2){//同步
+            that.loading = true;
+            api.post(
+                    "/remoteApi/tool/synchro/commandSyn",
+                    {
+                      orgCode: row.subCenterCode,
+                      trialId: row.id,
+                      unitId: row.unitId,
+                      userId: api.getGlobalVal("userObj").id,
+                      userName: api.getGlobalVal("userObj").userName,
+                    },
+                3600000)
+                    .then(res => {
+                      if (res.code == "success") {
+                        // that.updateRecordTrialRecordStatus(that,row,operationStatus);
+                        that.loading = false;
+                        this.$message({
+                          type: "success",
+                          message: res.rspMsg||res.message
+                        });
+                        row.recordStatus=res.data.recordStatus;
+                        that._Storage.setObj("fileItem", "obj",row);
+                        row = that._Storage.getObj("fileItem", "obj");
+                      }else {
+                        that.loading = false;
+                        this.$message({
+                          type: "error",
+                          message: res.rspMsg
+                        });
+                      }
+                    })
+                    .catch(res => {
+                      that.loading = false;
+                      this.$message({
+                        type: "error",
+                        message: res
+                      });
+                    });
+          }else if(val==4){
+            api.post("/remoteApi/tool/recordTrial/appointOperator",
+                    {
+                      trialId: that.facilitiesInData.id,
+                      userId: that.assignment,
+                      trialManCode: 3,
+                    }, 5000).then(res => {
+              if (res.code === "success") {
+                that.updateRecordTrialRecordStatus(that,row,val,operationStatus);
+                that.dialogFenpaiVisible = false;
+              }else{
+                this.$message({
+                  type: "error",
+                  message: res.rspMsg || res.message
+                });
+              }
+            }).catch(err => {
+              that.$message({
+                type: "warning",
+                message: err
+              });
+            });
+          }else if(val==0 || val==3){
+            that.$refs.editorInfo.cancel();
+            that.updateRecordTrialRecordStatus(that,row,val,operationStatus);
+          }else{
+            that.updateRecordTrialRecordStatus(that,row,val,operationStatus);
+          }
+        });
+      },
+      updateRecordTrialRecordStatus(that,row,val,operationStatus){
+        api.post(
+                "/remoteApi/tool/recordTrial/updateRecordTrialRecordStatus",
+                {
+                  trialId: row.id,
+                  recordStatus: row.recordStatus,
+                  userId: api.getGlobalVal("userObj").id,
+                  userName: api.getGlobalVal("userObj").userName,
+                  operationStatus: operationStatus,
+                  oprFlag:row.oprFlag,
+                  opinions: that.rejectVal
+                },
+                2000000
+        )
+                .then(res => {
+                  if (res.code === "success") {
+                    this.$message({
+                      type: "success",
+                      message: "操作成功"
+                    });
+
+                    row.recordStatus=res.data.rtnStatus;
+                    that._Storage.setObj("fileItem", "obj",row);
+                    row = that._Storage.getObj("fileItem", "obj");
+                    that.loadData();
+                    if(val == 4){
+                      that.dialogFenpaiVisible = false;
+                    }
+                    if(val == 3 || val == 0){
+                      that.dialogVisible = false;
+                      that.rejectVal = "";
+                    }
+
+                  }else{
+                    that.$message({
+                      type: "error",
+                      message: res.rspMsg
+                    });
+                  }
+                })
+                .catch(err => {
+                  this.$message({
+                    type: "warning",
+                    message: err
+                  });
+                });
+      },
+      //分派电子下拉列表
+      assignHandel() {
+        let that = this;
+        api.post("/remoteApi/tool/user/getUserListByRoleNames",{
+          //roleNames:api.getGlobalVal("userObj").userAuthList[0].authRoleList[0].roleName,
+          roleNames: that.roleNames
+        }, 5000).then(res => {
+          if (res.code === "success") {
+            // that.assignmentList = res.data;
+            res.data.map(function(item){
+              that.assignmentList.push({
+                label:item.userName,
+                value:item.userId
+              })
+            })
+            // console.log(that.assignmentList)
+          }else{
+            that.$message({
+              type: "error",
+              message: '获取失败'
+            });
+          }
+        }).catch(err => {
+          that.$message({
+            type: "warning",
+            message: err
+          });
+        });
+      },
+      //分派电子档案确定按钮
+      assignSureHandel(){
+        let that = this;
+        if (that.assignment == '') {
+          this.$message({
+            type: 'warning',
+            message: "指定建档人不能为空"
+          });
+          return;
+        };
+        that.setRcordStatus(4,1)
+      },
+      /**
+       * 查看备注信息关闭按钮事件
+       */
+      handleClose(){
+        this.show= false
+      }
+    }
+  };
+</script>
+<style lang="scss" scoped>
+  .tips-p {
+    color: #999;
+  }
+  .el-link--inner a{
+    color: #1a77ff !important;
+    margin-left: 10px;
+    display: inline-block;
+  }
+  .right-main-warpper {
+    background: #fff;
+    .search-bar-wrapper {
+      padding-top: 8px;
+      .el-select {
+        width: 100%;
+      }
+    }
+    .el-button + .el-button {
+      margin-left: 5px;
+    }
+    /deep/.demo-table-expand {
+      font-size: 0;
+      &.dialog-expand {
+        .el-form-item {
+          margin-bottom: 8px;
+
+          label {
+            color: #0d87d4;
+            text-align: left;
+          }
+          .el-form-item__content {
+            width: calc(100% - 20px);
+          }
+        }
+      }
+      .el-form-item {
+        margin-right: 0;
+        margin-bottom: 0;
+        width: 100%;
+        label {
+          width: 110px;
+          text-align: right;
+          padding-left: 5px;
+          display: inline-block;
+        }
+
+        .el-form-item__content {
+          height: 43px;
+          width: calc(100% - 120px);
+          text-align: left;
+          .span-show {
+            height: 32px;
+            display: inline-block;
+            width: auto;
+            max-width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+          }
+        }
+      }
+    }
+    .row-bg {
+      padding: 10px 0;
+      padding-top: 15px;
+    }
+    .showHide {
+      display: none;
+    }
+  }
+
+  .notab {
+    border-top: none;
+  }
+
+  .task-list-content {
+    background: #fff;
+    padding: 5px;
+    .task-list-top {
+      text-align: right;
+      margin: 5px 0;
+      vertical-align: top;
+      .el-button--primary {
+        vertical-align: top;
+      }
+    }
+    .height-200 {
+      padding: 30px 0;
+    }
+  }
+  .height-300 {
+    padding: 5px 0;
+    max-height: 600px;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  .fenpai-form {
+    text-align: left;
+    .el-form--label-top .el-form-item__label {
+      text-align: left !important;
+    }
+    .el-select {
+      width: 100%;
+    }
+  }
+  /deep/.el-table {
+    .el-table__body-wrapper {
+      height: calc(100vh - 55px - 10px - 143px);
+      overflow-y: auto;
+    }
+  }
+  .input-textarea-diy{
+    font-size: 14px;
+    line-height: 24px;
+  }
+  /deep/.ql-toolbar.ql-snow + .ql-container.ql-snow{
+    height: 400px;
+    overflow: auto;
+  }
+  /deep/ .objhtml{
+    height: 500px;
+    width: 100%;
+    display: block;
+    overflow-y: auto;
+    overflow-x: hidden;
+    text-align: left;
+    word-wrap:break-word;
+    img{
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      display: inline-block;
+    }
+
+  }
+
+
+</style>
+

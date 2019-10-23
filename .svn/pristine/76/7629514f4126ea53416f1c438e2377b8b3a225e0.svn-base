@@ -1,0 +1,196 @@
+<template>
+  <div class="upload-content">
+    <el-form
+      ref="form"
+      :model="form"
+      :label-position="labelPosition"
+      label-width="100px"
+      class="upload-content-from"
+    >
+      <el-form-item label="上传文件:">
+        <el-upload
+          class="upload-demo"
+          drag
+          action="/remoteApi/tool/record/getExcelSheetName"
+          accept="multipart/form-data"
+          :limit="1"
+          :data="{identity:new Date().getTime()}"
+          :on-remove="handleRemove"
+          :file-list="form.fileList"
+          :on-error="handleAvatarError"
+          :on-success="handleAvatarSuccess"
+          :before-upload="beforeAvatarUpload"
+          :auto-upload="true"
+          :show-file-list="showFileFlag"
+          :on-exceed="handleExceed"
+        >
+          <i class="el-icon-upload"></i>
+          <div class="el-upload__text">
+            在此处上传文件
+            <em>点击上传</em>
+          </div>
+        </el-upload>
+      </el-form-item>
+      <el-form-item label="表名:">
+        <el-select v-model="selectListVal" placeholder="请选择表名" filterable>
+          <el-option
+            v-for="item in selectList"
+            :key="item.id"
+            :label="item.label"
+            :value="item.value"
+          ></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label>
+        <el-button type="primary"  v-loading.fullscreen.lock="loading" @click="onSubmit">导入</el-button>
+        <el-button type @click="ResetOrCloseBtn">重置</el-button>
+      </el-form-item>
+    </el-form>
+  </div>
+</template>
+<script>
+import api from "~/config/http";
+export default {
+  props: ["uploadVal"],
+  data() {
+    return {
+      loading:false,
+      labelPosition: "top",
+      form: {
+        fileList: []
+      },
+      dialogFormVisible: false,
+      oFile: "",
+      onlyFlag: "",
+      selectList: [],
+      selectListVal: "",
+      fileObj: null,
+      fileIdentity: "",
+      dataObj: {},
+      showFileFlag: true
+    };
+  },
+  created() {},
+  mounted() {},
+  methods: {
+    //上传失败
+    handleAvatarError(err, file, fileList) {
+      this.$message({
+        message: "上传文件失败",
+        type: "error"
+      });
+    },
+    //上传成功
+    handleAvatarSuccess(res, file) {
+      const that = this;
+      if (res.code == "success") {
+        that.showFileFlag = true;
+        if (!res.data.sheetNameList) {
+          return;
+        }
+        var sheetNameList = res.data.sheetNameList;
+        that.onlyFlag = res.data.identity;
+        if (!sheetNameList) {
+          return;
+        }
+        for (var i = 0; i < sheetNameList.length; i++) {
+          that.selectList.push({
+            label: sheetNameList[i],
+            value: sheetNameList[i]
+          });
+        }
+      } else {
+        that.form.fileList =[];
+        that.$message({
+          message: "上传文件失败",
+          type: "error"
+        });
+      }
+    },
+    /**
+     * 最多20个文件
+     * @param files
+     * @param fileList
+     */
+    handleExceed(files, fileList) {
+      this.$message.warning(`当前限制选择 1 个文件，本次选择了 ${files.length} 个文件，共选择了 ${files.length + fileList.length} 个文件，先删除后上传`);
+    },
+
+    // 文件列表移除文件时的钩子
+    handleRemove(file, fileList) {
+      this.selectListVal = "";
+      this.selectList = [];
+    },
+    //导入提交
+    onSubmit() {
+      var that = this;
+      if (that.selectListVal == "") {
+        this.$message({
+          type: "warning",
+          message: "表名称不能为空"
+        });
+        return;
+      }
+      that.loading = true;
+      api
+        .post("/remoteApi/tool/record/uploadExcel", {
+          identity: that.onlyFlag,
+          fileId: that.uploadVal.fileId,
+          sheetName: this.selectListVal,
+          userId: api.getGlobalVal("userObj").id,
+          unitId: that.uploadVal.unitId,
+          operationOrgId: that.uploadVal.operationOrgId,
+          TabName: that.uploadVal.TabName
+        })
+        .then(res => {
+          if (res.code == "success") {
+            that.loading = false;
+            if (!res.data) {
+              that.$message.error("表不符合规范或者已使用过");
+              return;
+            }
+            that.$message.success("保存成功");
+            that.$emit("importHandel");
+          } else {
+            that.loading = false;
+            this.$message.error(res.message);
+          }
+          // that.$emit('importHandel', res.data)
+        });
+    },
+
+    //取消
+    ResetOrCloseBtn() {
+      var that = this;
+      that.form.fileList = [];
+      that.selectListVal = "";
+      that.selectList = [];
+      that.oFile = "";
+    },
+    beforeAvatarUpload(file) {
+      console.log(file)
+      console.log(this.form.fileList)
+    }
+  }
+};
+</script>
+<style lang="scss" scoped>
+.upload-content {
+  height: auto;
+  width: 100%;
+  background: #fff;
+  text-align: left;
+  padding: 5px 0;
+  overflow-y: auto;
+  .upload-content-from {
+    width: 450px;
+    .el-upload-list {
+      width: 410px;
+    }
+    .el-form--label-top .el-form-item__label {
+      padding: 0;
+    }
+  }
+}
+</style>
+

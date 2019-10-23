@@ -1,0 +1,211 @@
+.filterAll {
+    clear: both;
+    height: 78px;
+    padding: 22px 1.7rem 0;
+    box-sizing: border-box;
+    background: #fff;
+
+    .text-2 {
+        display: inline-block;
+
+        label {
+            width: 40px;
+            text-align: right;
+            display: inline-block;
+            padding-right: 10px;
+            box-sizing: border-box;
+        }
+
+        .el-input {
+            width: calc(100% - 60px);
+        }
+
+        .el-select {
+            width: calc(100% - 60px);
+
+            .el-input {
+                width: calc(100%);
+            }
+        }
+
+        .el-date-editor {
+            width: calc(100% - 60px);
+        }
+    }
+
+    .text-3 {
+        display: inline-block;
+
+        label {
+            width: 55px;
+            text-align: right;
+            display: inline-block;
+            padding-right: 10px;
+            box-sizing: border-box;
+        }
+
+        .el-input {
+            width: calc(100% - 75px);
+        }
+
+        .el-select {
+            width: calc(100% - 75px);
+
+            .el-input {
+                width: calc(100%);
+            }
+        }
+
+        .el-date-editor {
+            width: calc(100% - 75px);
+        }
+    }
+
+    .text-4 {
+        display: inline-block;
+
+        label {
+            width: 70px;
+            text-align: right;
+            display: inline-block;
+            padding-right: 10px;
+            box-sizing: border-box;
+        }
+
+        .el-input {
+            width: calc(100% - 90px);
+        }
+
+        .el-select {
+            width: calc(100% - 90px);
+
+            .el-input {
+                width: calc(100%);
+            }
+        }
+
+        .el-date-editor {
+            width: calc(100% - 90px) !important;
+        }
+    }
+
+    .text-5 {
+        display: inline-block;
+
+        label {
+            width: 85px;
+            text-align: right;
+            display: inline-block;
+            padding-right: 10px;
+            box-sizing: border-box;
+        }
+
+        .el-input {
+            width: calc(100% - 105px);
+        }
+
+        .el-select {
+            width: calc(100% - 105px);
+
+            .el-input {
+                width: calc(100%);
+            }
+        }
+
+        .el-date-editor {
+            width: calc(100% - 105px) !important;
+        }
+    }
+
+    .text-6 {
+        display: inline-block;
+
+        label {
+            width: 95px;
+            text-align: right;
+            display: inline-block;
+            padding-right: 10px;
+            box-sizing: border-box;
+        }
+
+        .el-input {
+            width: calc(100% - 120px);
+        }
+
+        .el-select {
+            width: calc(100% - 120px);
+
+            .el-input {
+                width: calc(100%);
+            }
+        }
+
+        .el-date-editor {
+            width: calc(100% - 120px) !important;
+        }
+    }
+
+    .el-row {
+        padding: 0;
+    }
+
+    .el-radio-button {
+        width: 90px;
+    }
+
+    .el-form-item--small .el-form-item__content,
+    .el-form-item--small .el-form-item__label {
+        line-height: 78px; //64px;
+        max-width: 16rem;
+    }
+
+    .el-form-item--mini.el-form-item,
+    .el-form-item--small.el-form-item {
+        margin-bottom: 0;
+    }
+
+    /* 按钮的字号 */
+    .el-button {
+        font-size: 1.6rem;
+    }
+
+    .el-icon-search {
+        cursor: pointer;
+        color: #409eff;
+        font-size: 1.6rem;
+        font-weight: bold;
+    }
+
+    .clearfloat:after {
+        display: block;
+        clear: both;
+        content: "";
+        visibility: hidden;
+        height: 0
+    }
+}
+
+@media screen and (max-width: 1680px) {
+    .filterAll {
+        height: 74px;
+
+        // line-height: 74px;
+        .el-form-item--small .el-form-item__content,
+        .el-form-item--small .el-form-item__label {
+            line-height: 74px;
+        }
+    }
+}
+
+@media screen and (max-width: 1440px) {
+    .filterAll {
+        height: 64px;
+        padding-top: 16px;
+
+        // line-height: 64px;
+        .el-form-item--small .el-form-item__content,
+        .el-form-item--small .el-form-item__label {
+            line-height: 64px;
+        }
+    }
+}

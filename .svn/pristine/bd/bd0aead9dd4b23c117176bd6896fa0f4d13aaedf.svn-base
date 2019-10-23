@@ -1,0 +1,51 @@
+// body, div, ul, ol, dl, dt, dd, li, dl, h1, h2, h3, h4
+// {margin:0;padding:0;font-style:normal;font:12px/22px "\5B8B\4F53",Arial, Helvetica,sans-serif} 
+[v-cloak]{display:none;}
+ 
+ol, ul ,li{list-style: none;} 
+img {border: 0; vertical-align:middle;} 
+body{margin:0;padding:0;color:#000000;background:#FFF;} 
+.clear{clear:both;height:1px;width:100%; overflow:hidden; margin-top:-1px;} 
+a{color:#000000;text-decoration:none; }  
+a:hover{color:#20a0ff;text-decoration:none;} 
+.hide{
+    display: none;
+}
+$color:#409eff;
+.el-icon-back{
+    border-radius:50%;
+    background:#fff;
+    color:$color;
+    font-size:30px;
+    line-height: 30px;
+    padding:5px;
+    position: absolute;
+    right:27px;
+    top:50px;
+    z-index:1;
+    cursor: pointer;
+}
+
+/* 公共的表格样式 */
+.el-table th {
+    background: #eef5fc!important;
+    border-bottom: 1px #b2d2f2 solid!important;
+    border-top: 1px #d3dce6 solid!important;
+  }
+  .el-table tr {
+    td {
+      padding: 0 10px!important;
+    }
+  }
+  .el-table .cell {
+    line-height: 48px!important;
+  }
+  
+  .el-table--small td,
+  .el-table--small th {
+    padding: 0 10px!important;
+  }
+  .el-pagination {
+    margin: 11px 10px 0 0!important;
+    text-align: right!important;
+  }

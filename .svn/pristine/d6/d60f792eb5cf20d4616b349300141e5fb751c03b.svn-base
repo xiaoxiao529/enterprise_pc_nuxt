@@ -1,0 +1,1438 @@
+<template>
+    <div class="storied-suilding-wrapper right-main-warpper">
+    	<div class="h2-title-wrap">
+	        <h2 class="tilte-h2">推送缓存</h2>
+	      </div>
+        <div class="search-bar-wrapper">
+            <el-form label-position="left" inline class="demo-table-expand">
+            	<el-form-item label="运营中心:">
+		            <el-select
+		              v-model="orgCode"
+		              size="small"
+		              filterable
+		              placeholder="全部"
+		              @change="changeoperationCenter"
+		            >
+		              <el-option
+		                v-for="item in operationCenter"
+		                :key="item.value"
+		                :label="item.label"
+		                :value="item.value"
+		              ></el-option>
+		            </el-select>
+		          </el-form-item>
+		
+		          <el-form-item label="单位:">
+		            <el-select
+		              v-model="unitId"
+		              size="small"
+		              :loading="isSlectLoading"
+		              filterable
+		              placeholder="全部"
+		              @focus="changeUnits"
+		              @change="changeUnitIds"
+		            >
+		              <el-option
+		                v-for="item in units"
+		                :key="item.value"
+		                :label="item.label"
+		                :value="item.value"
+		              ></el-option>
+		            </el-select>
+		          </el-form-item>
+                <el-form-item label="楼栋:">
+                    <el-select v-model.trim="formInline.buildId" placeholder="楼栋信息" filterable @change="getFloorInfo">
+                        <el-option v-for="item in buildList" :key="item.buildId" :label="item.buildName" :value="item.buildId">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="楼层:">
+                    <el-select v-model.trim="formInline.floorId" filterable placeholder="楼层信息">
+                        <el-option v-for="item in floorList" :key="item.floorId" :label="item.floorName" :value="item.floorId">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="设备ID:" :label-width="searchFormLabelWidth">
+                    <el-input  v-model="formInline.deviceId"></el-input>
+                </el-form-item>
+                <el-form-item label="设备名称:" :label-width="searchFormLabelWidth">
+                    <el-input v-model="formInline.deviceName"></el-input>
+                </el-form-item>
+                <el-form-item label="设施系统:" :label-width="searchFormLabelWidth">
+                    <el-select v-model.trim="formInline.deviceSys" placeholder="设施系统" @change="selectDeviceSys">
+                        <el-option v-for="item in deviceSys" :key="item.value" :label="item.label" :value="item.value">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="设施:" :label-width="searchFormLabelWidth">
+                    <el-select v-model.trim="formInline.device" placeholder="全部" @change="selectDevice">
+                        <el-option v-for="item in optsTemp" :key="item.value" :label="item.label" :value="item.value">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="厂家标识:" :label-width="searchFormLabelWidth">
+                    <el-input  v-model="formInline.sourceId"></el-input>
+                </el-form-item>
+                <el-form-item label="机号:" :label-width="searchFormLabelWidth">
+                    <el-input  v-model="formInline.laMake"></el-input>
+                </el-form-item>
+                <el-form-item label="回路:" :label-width="searchFormLabelWidth" style="width: 18.75%">
+                    <el-input  v-model="formInline.laLoop"></el-input>
+                </el-form-item>
+                <el-form-item label="点位:" :label-width="searchFormLabelWidth"  style="width: 18.75%">
+                    <el-input  v-model="formInline.laPoint"></el-input>
+                </el-form-item>
+                <el-form-item label="用传编码:" :label-width="searchFormLabelWidth"  style="width: 18.75%">
+                    <el-input  v-model="formInline.controlHost"></el-input>
+                </el-form-item>
+                <el-form-item label="状态:" :label-width="searchFormLabelWidth" style="width: 18.75%">
+                    <el-select  v-model="status"  filterable placeholder="请选择">
+                        <el-option v-for="item in stateList" :key="item.value" :label="item.label" :value="item.value"
+                        ></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item  class="t-right">
+                    <el-button @click="resetBtn" >重置</el-button>
+                    <el-button type="primary" @click="loadData('search')">搜索</el-button>
+                    <el-button type="primary" @click="pushCache()">推送缓存</el-button>
+                </el-form-item>
+            </el-form>
+        </div>
+        <div class="notab">
+            <el-scrollbar>
+                <el-table v-loading="isLoading" :data="tableData" stripe>
+                    <el-table-column align="left" min-width="7%" :show-overflow-tooltip="true" pageSize="pageSize" prop="deviceId"
+                                     label="设备Id">
+                    </el-table-column>
+                    <el-table-column align="left" min-width="10%" :show-overflow-tooltip="true" prop="deviceName" label="设备名称">
+                    </el-table-column>
+                    <el-table-column align="left" min-width="8%" :show-overflow-tooltip="true" prop="deviceTypeName" label="设备类型">
+                    </el-table-column>
+                    <el-table-column align="left" min-width="8%" :show-overflow-tooltip="true" prop="deviceAddress" label="设备地址">
+                    </el-table-column>
+                    <el-table-column align="left" min-width="8%" :show-overflow-tooltip="true" prop="laLoop" label="机号回路点位">
+                        <template slot-scope="scope">
+                            {{scope.row.laMake}}-{{scope.row.laLoop}}-{{scope.row.laPoint}}
+                        </template>
+                    </el-table-column>
+                    <el-table-column align="left" min-width="7%" :show-overflow-tooltip="true" prop="twoCode" label="二次码">
+                    </el-table-column>
+                    <el-table-column align="left" min-width="7%" :show-overflow-tooltip="true" prop="sourceId" label="sourceId">
+                    </el-table-column>
+                    <el-table-column align="left" min-width="8%" :show-overflow-tooltip="true" prop="controlHost" label="controlHost">
+                    </el-table-column>
+                    <!-- <el-table-column align="left" min-width="7%" :show-overflow-tooltip="true" prop="stateName" label="状态">
+                    </el-table-column> -->
+                    <el-table-column align="center" min-width="12%" label="操作">
+                        <template slot-scope="scope">
+                            <el-button type="text" @click="handleEditPlan('edit',scope.row)"  v-if="facilitiesInData.limtShow">编辑</el-button>
+                            <el-button type="text" @click="handleEditPlan('view',scope.row)">查看</el-button>
+                            <el-button type="text" @click="handleEditPlan('delete',scope.row)"  v-if="facilitiesInData.limtShow" :disabled="scope.row.status=='0' ? false : true"
+                            >停用</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </el-scrollbar>
+            <Pagination :widgetInfo="widgetInfo" v-on:sonHandleCurrentChange="sonHandleCurrentChange" />
+        </div>
+        <el-dialog :title="optTitle"  :visible.sync="dialogFormVisible"  width="960px">
+            <div style="height:400px;overflow-x: hidden;overflow-y: auto;" ref="dialogScoll">
+                <el-form :model="plan" label-position="left" inline class="demo-table-expand dialog-expand">
+                    <el-form-item label="楼栋:" :rules="{
+      required: true, message: '楼栋不能为空', trigger: 'blur'}">
+                        <el-select :disabled="inputDisabled" v-model.trim="plan.buildId" filterable placeholder="楼栋信息" @change="getFloorInfo" >
+                            <el-option v-for="item in buildList" :key="item.buildId" :label="item.buildName" :value="item.buildId">
+                            </el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="楼层:" :rules="{
+      required: true, message: '楼层不能为空', trigger: 'blur'}">
+                        <el-select :disabled="inputDisabled" v-model.trim="plan.floorId" filterable placeholder="楼层信息" @change="getFloorInfoName" >
+                            <el-option v-for="item in floorList" :key="item.floorId" :label="item.floorName" :value="item.floorId">
+                            </el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="设备名称:" :label-width="formLabelWidth"  :rules="{
+      required: true, message: '设备名称不能为空', trigger: 'blur'}">
+                        <el-input :disabled="inputDisabled" v-model="plan.deviceName" auto-complete="off" ></el-input>
+                    </el-form-item>
+                    <el-form-item label="用户信息传输装置:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.controlHost" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item v-if="optMode != 'add'" label="设备ID:" :label-width="formLabelWidth">
+                        <el-input disabled v-model="plan.deviceId" auto-complete="off"></el-input>
+                    </el-form-item>
+
+                    <el-form-item label="设备地址:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.deviceAddress" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="机号:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.laMake" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="回路:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.laLoop" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="位置:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.laPoint" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="二次码:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.twoCode" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="经度:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.longitude" auto-complete="off" placeholder="请输入数字"></el-input>
+                    </el-form-item>
+                    <el-form-item label="纬度:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.latitude" auto-complete="off" placeholder="请输入数字"></el-input>
+                    </el-form-item>
+                    <el-form-item label="设备类型父ID:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.deviceTypePid" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="设备类型:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.deviceTypeId" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="阈值:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.threshold" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="蓝牙ID:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.bluetoothId" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="品牌:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.brand" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="生产日期:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.manufactureDate" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="启用日期:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.enableDate" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="有效期:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.validityDate" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="施工单位:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.constructionUnit" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="清洗期限:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.cleanDeadline" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="历次清洗时间:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.clean_time" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="用电负荷:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.powerLoad" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="供电电压:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.powersupplyVoltage" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="输出功率:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.outputPower" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="供电负荷:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.powersupplyLoad" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="发电功率:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.powerGeneration" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="设计温度:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.designTemperature" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="扬程:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.lift" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="流量:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.flow" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="射程:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.reach" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="有效容积:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.effectiveVolume" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="容量:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.capacity" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="介质:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.media" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="风量:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.blowingRate" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="功率:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.powers" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="载重:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.loads" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="运行速度:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.runningSpeed" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="耐火极限:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.fireEndurance" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="尺寸:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.sizes" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="材质:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.materialQuality" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="风口大小:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.tuyereSize" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="供水来源:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.watersupplySource" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="接口口径:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.interfaceCaliber" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="形式:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.form" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="朝向:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.orientation" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="是否核点:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.isReview" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="备注:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.remark" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="sourceId:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.sourceId" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="安装日期:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.installTime" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="是否为C端设备:" :label-width="formLabelWidth">
+                        <el-select :disabled="inputDisabled" v-model.trim="plan.isCTerminal" placeholder="是否为C端设备">
+                            <el-option v-for="item in terminalList" :key="item.value" :label="item.label" :value="item.value">
+                            </el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="vender:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.vender" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="地点位置ID:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.locationId" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="百度坐标X:" :label-width="formLabelWidth" >
+                        <el-input :disabled="inputDisabled" v-model="plan.mapX" auto-complete="off"  placeholder="请输入数字"></el-input>
+                    </el-form-item>
+                    <el-form-item label="百度坐标Y:" :label-width="formLabelWidth" >
+                        <el-input :disabled="inputDisabled" v-model="plan.mapY" auto-complete="off"  placeholder="请输入数字"></el-input>
+                    </el-form-item>
+                    <el-form-item label="设备报警联系电话:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.alarmCall" auto-complete="off"></el-input>
+                    </el-form-item>
+                    <el-form-item label="监测对象:" :label-width="formLabelWidth">
+                        <el-input :disabled="inputDisabled" v-model="plan.monitoringObject" auto-complete="off"></el-input>
+                    </el-form-item>
+
+                </el-form>
+                <div v-if="showSaveOrUpdate" slot="footer" class="dialog-footer" style="float: right;">
+                    <el-button @click="cancelHandel">取 消</el-button>
+                    <el-button type="primary"  @click="saveOrUpdateForm">确 定</el-button>
+                </div>
+            </div>
+        </el-dialog>
+        <el-dialog :visible.sync="visible" title="批量修改" width="480px">
+           <div class="plxg-wrap">
+               <el-form :model="dynamicValidateForm" ref="dynamicValidateForm" class="demo-dynamic">
+                   <el-row v-for="(domain, index) in dynamicValidateForm.domains" :key="index" :gutter="10" class="form-list-wrapper">
+                       <el-col :span="9">
+
+                           <el-form-item :key="domain.columnKey" :prop="'domains.' + index + '.columnValue'" :rules="{
+                                            required: true, message: '批量修改类型不能为空', trigger: 'change'
+                                        }">
+                               <el-select v-model.trim="domain.columnValue" placeholder="请选择批量修改字段">
+                                   <el-option v-for="(item,index) in columnList" :key="index" :label="item.label" :value="item.value">
+                                   </el-option>
+                               </el-select>
+                           </el-form-item>
+
+                       </el-col>
+                       <el-col :span="15">
+                           <el-form-item :key="domain.textKey" :prop="'domains.' + index + '.textValue'" :rules="{
+                                required: true, message: '该输入框不能为空', trigger: 'blur'
+                                }">
+                               <el-input v-model="domain.textValue"></el-input>
+                           </el-form-item>
+                       </el-col>
+
+                   </el-row>
+               </el-form>
+           </div>
+            <span slot="footer" class="dialog-footer dialog-footer-pl">
+                 <el-button type="primary" @click="batchSubmitForm('dynamicValidateForm')">提交</el-button>
+                 <el-button @click="resetForm('dynamicValidateForm')">重置</el-button>
+            </span>
+        </el-dialog>
+        <el-dialog title="上传" :visible.sync="dialogExcelVisible"   @close="closeDialog"  :close-on-click-modal="false" width="500px">
+            <div class="daoru-wrapper">
+                <import-upload ref="myChild"
+                               v-on:importHandel="setImport"
+                               v-bind:uploadVal="uploadVal"></import-upload>
+            </div>
+        </el-dialog>
+        <!--推送缓存弹框-->
+        <el-dialog
+		  title="推送缓存"
+		  :visible.sync="dialogVisible"
+		  width="550px"
+		>
+		  <div class="CacheBtn" style="padding: 30px 0;">
+  			<el-radio-group v-model="formInline.pushCacheValue" @change="changeCacheValue">
+              <el-radio  v-for="item of pushCacheData" :key="item.value" :label="item.value">{{item.label}}</el-radio>
+            </el-radio-group>
+		  </div>
+		  
+		  <span slot="footer" class="dialog-footer">
+		    <el-button @click="cencelPushCache()">取 消</el-button>
+		    <el-button type="primary" @click="openDoubleDialog()">确 定</el-button>
+		  </span>
+		</el-dialog>
+		
+		<!--二次确认推送缓存弹框-->
+		<el-dialog
+		  title="推送缓存"
+		  :visible.sync="dialogDoubleVisible"
+		  width="550px"
+		>
+		  <p style="text-align: center;font-size: 16px;padding: 30px 0;">确定要推送缓存吗？</p>
+		  
+		  <span slot="footer" class="dialog-footer">
+		    <el-button @click="cencelPushCache()">取 消</el-button>
+		    <el-button type="primary" @click="pushCacheSure()">确 定</el-button>
+		  </span>
+		</el-dialog>
+		
+		
+    </div>
+</template>
+<script>
+    import api from '~/config/http';
+    import Pagination from "~/components/Pagination";
+    import importUpload from "~/components/upload/importUpload";
+    export default {
+        name:'Equipment',
+        components:{
+            Pagination,
+            importUpload
+        },
+//      props:['facilitiesInData'],
+        data(){
+            return{
+                dialogExcelVisible:false,
+                dialogVisible: false,
+                dialogDoubleVisible:false,
+                uploadVal:{},
+                deviceIdShow:false,
+                isSlectLoading: true,
+                orgCode: "", //运营中心
+		      	operationCenter: [
+			        {
+			          label: "全部",
+			          value: ""
+			        }
+			    ], //所属运营中心列表
+		      	unitId: "", //选中单位
+			    units: [
+			        {
+			          label: "全部",
+			          value: ""
+			        }
+			    ], //单位列表
+                buildList:[
+                	{
+			          label: "楼栋信息",
+			          value: ""
+			        }
+                ],//楼栋
+                floorList:[
+                	{
+			          label: "楼层信息",
+			          value: ""
+			        }
+                ],//楼层
+                formInline:{
+                    buildId:null,
+                    buildName:null,
+                    floorId:null,
+                    floorName:null,
+                    deviceId:null,
+                    deviceName:null,
+                    deviceTypeIds:null,
+                    deviceSys: '00000000',
+                    device: '00000000',
+                    sourceId:'',
+                    laMake:'',
+                    laLoop:'',
+                    laPoint:'',
+                    controlHost:'',
+                    pushCacheValue:''
+                },
+                status:0,
+                stateList:[
+                    {value:'',label:"全部"},
+                    {value:0,label:"在用"},
+                    {value:1,label:"停用"}
+                ],
+                terminalList:[
+                    {value:'',label:"暂不填"},
+                    {value:0,label:"是"},
+                    {value:1,label:"否"}
+                ],
+                deviceSys: [{
+                    value: '00000000',
+                    label: '全部'
+                }],
+                optsTemp: [{
+                    value: '00000000',
+                    label: '全部'
+                }],
+                widgetInfo: {
+                    total: null,
+                    pageSize: 6,
+                    pageNo: 1
+                },
+                columnList:[],
+                tableData: [],
+                isLoading: false,
+                dialogFormVisible:false,
+                plan:{
+                    floorId:null
+                },
+                visible: false,
+                dynamicValidateForm: {
+                    domains: [{
+                        columnKey: '',
+                        columnValue: '',
+                        textKey: '',
+                        textValue: '',
+                    }]
+                },
+                searchFormLabelWidth: '80px',
+                formLabelWidth: '100%',
+                optTitle:null,
+                inputDisabled:false,
+                showSaveOrUpdate:false,
+                optMode:null,
+                ZS: {
+                    MONITOR: {}
+                },
+                facilitiesInData:{},
+                pushCacheData:[
+                	{value:'NewDevices',label:"设备新增"},
+                    {value:'UpdateDevices',label:"设备更新"},
+                    {value:'PhysicsDelDevices',label:"逻辑删除"},
+                    {value:'LogicalDelDevices',label:"物理删除"}
+                ],
+                
+            }
+        },
+        mounted() {
+            
+            // this.loadData();
+            this.createDeviceTypeSelect();
+            this.getColumnList();
+            this.facilitiesInData = this._Storage.getObj("fileItem", "obj");
+		    //所属运营中心
+    		this.findOrgListByRole();
+        },
+        methods:{
+        	pushCache(){
+            	if(this.unitId == ""){
+					this.$message({
+                        type: 'warning',
+                        message: "请先选择单位！"
+                   });
+                   return false
+				}
+            	this.dialogVisible = true;
+            },
+//      	获取缓存值
+			changeCacheValue(event){
+				console.log(this.formInline.pushCacheValue)
+			},
+			openDoubleDialog(){
+				if(this.formInline.pushCacheValue == ""){
+					this.$message({
+                        type: 'warning',
+                        message: "请选择推送类型!"
+                   });
+                   return false;
+				}else{
+					this.dialogVisible = false;
+					this.dialogDoubleVisible = true;
+				}
+				
+			},
+			cencelPushCache(){
+				this.dialogVisible = false;
+				this.dialogDoubleVisible = false;
+				this.formInline.pushCacheValue = "";
+			},
+			pushCacheSure(){
+				
+				this.dialogVisible = false;
+				this.dialogDoubleVisible = false;
+				api
+		        .post("/remoteApi/tool/deviceInfo/pushCache", {
+		          	unitId: this.unitId,
+		          	pushType: this.formInline.pushCacheValue,
+		          	buildId: this.formInline.buildId,
+	                buildName: this.formInline.buildName,
+	                floorId: this.formInline.floorId,
+	                floorName: this.formInline.floorName,
+	                deviceId:this.formInline.deviceId,
+	                deviceName:this.formInline.deviceName,
+	                deviceTypeIds:this.ZS.MONITOR.deviceQueryType,
+	                sourceId:this.formInline.sourceId,
+	                laMake:this.formInline.laMake,
+	                laLoop:this.formInline.laLoop,
+	                laPoint:this.formInline.laPoint,
+	                controlHost:this.formInline.controlHost,
+	                status:this.status
+		        })
+		        .then(res => {
+		          if (res && res.code === "success") {
+		          	console.log(res,"res")
+		            this.formInline.pushCacheValue = "";
+		            this.$message({
+                        type: 'warning',
+                        message: res.message
+                   });
+		          } else {
+		          	this.formInline.pushCacheValue = "";
+		            this.$message({
+                        type: 'warning',
+                        message: res.message
+                   });
+		          }
+		        })
+		        .catch(err => {
+		          console.log(err);
+		        });
+				
+			},
+        	//所属运营中心
+		    findOrgListByRole() {
+		      this.isLoading = true;
+		      api
+		        .post("/remoteApi/tool/org/findOrgListByRole", {
+		          userId: api.getGlobalVal("userObj").id,
+		          roleName: api.getGlobalVal("userObj").userAuthList[0].authRoleList[0]
+		            .roleName
+		        })
+		        .then(res => {
+		          if (res && res.code === "success") {
+		            var list = res.data;
+		            for (var key in list) {
+		              var temp = {};
+		              temp.value = list[key].orgCode;
+		              temp.label = list[key].orgName;
+		              this.operationCenter.push(temp);
+		            }
+		          } else {
+		            this.table = [];
+		            console.log("没有数值。。。。。");
+		          }
+		        })
+		        .catch(err => {
+		          console.log(err);
+		          this.isLoading = false;
+		        });
+		    },
+		    //联动单位
+		    changeoperationCenter() {
+		      this.isSlectLoading = true;
+		      this.units = [
+		        {
+		          label: "全部",
+		          value: ""
+		        }
+		      ];
+		      this.unitId = "";
+		      api
+		        .post("/remoteApi/tool/unit/findUnitByOrgCode", {
+		          orgCode: this.orgCode
+		        })
+		        .then(res => {
+		          if (res && res.code === "success") {
+		            this.isSlectLoading = false;
+		            var list = res.data;
+		            for (var key in list) {
+		              var temp = {};
+		              temp.value = list[key].unitId;
+		              temp.label = list[key].unitName;
+		              this.units.push(temp);
+		            }
+		          } else {
+		            this.units = [];
+		          }
+		        });
+		    },
+		    //默认全部单位
+		    findUnitByRole() {
+		      this.isSlectLoading = true;
+		      this.units = [
+		        {
+		          label: "全部",
+		          value: ""
+		        }
+		      ];
+		      api
+		        .post("/remoteApi/tool/unit/findUnitByRole", {
+		          userId: api.getGlobalVal("userObj").id,
+		          roleName: api.getGlobalVal("userObj").userAuthList[0].authRoleList[0]
+		            .roleName
+		        })
+		        .then(res => {
+		          if (res && res.code === "success") {
+		            this.isSlectLoading = false;
+		            var list = res.data;
+		            for (var key in list) {
+		              var temp = {};
+		              temp.value = list[key].unitId;
+		              temp.label = list[key].unitName;
+		              this.units.push(temp);
+		            }
+		          } else {
+		            this.units = [];
+		          }
+		        });
+		    },
+		    changeUnits() {
+		      if (this.orgCode == "") {
+		        this.findUnitByRole();
+		      }
+		    },
+		    changeUnitIds(){
+		    	console.log(this.unitId,"888")
+		    	this.buildList = [
+		    		{
+			          label: "楼栋信息",
+			          value: ""
+			        }
+		    	];
+		    	this.formInline.buildId = null;
+		    	this.findBuildByUnitId();
+		    },
+            cancelHandel(){
+                const that = this;
+                that.dialogFormVisible = false;
+                that.plan = {}
+                console.log( that.plan)
+                this.loadData("load");
+            },
+            closeDialog(){
+                //调用子组件方法
+                this.$refs.myChild.ResetOrCloseBtn();
+            },
+            setImport(){
+                this.dialogExcelVisible = false;
+                this.loadData('load');
+
+            },
+            dialogShow(){
+                this.dialogExcelVisible=true;
+                this.uploadVal={
+                    fileId: this.facilitiesInData.id,
+                    unitId: this.facilitiesInData.unitId,
+                    operationOrgId: this.facilitiesInData.subCenterCode,
+                    TabName:'设备'
+                }
+            },
+            resetBtn(){
+                var that = this;
+                var formInline = that.formInline;
+                that.orgCode = "";
+                that.unitId = "";
+                formInline.buildId = null;
+                formInline.buildName = null;
+                formInline.floorId = null;
+                formInline.floorName = null;
+                formInline.deviceName = null;
+                formInline.deviceId = null;
+                formInline.deviceTypeIds = null;
+                that.ZS.MONITOR.deviceQueryType = null;
+                formInline.deviceSys = '00000000';
+                formInline.device = '00000000';
+                formInline.sourceId = null;
+                formInline.laMake = null;
+                formInline.laLoop = null;
+                formInline.laPoint = null;
+                formInline.controlHost = null;
+                that.status = 0;
+                that.loadData('search');
+            },
+            //查询单位下面的楼栋信息
+            findBuildByUnitId(){
+            	
+//              this.isLoading = true;
+                api.post('/remoteApi/tool/build/findBuildByUnitId', {
+                    unitId: this.unitId
+                }).then(res => {
+//                  this.isLoading = false;
+                    if (res && res.code === "success") {
+                        this.buildList = res.data;
+                    } else {
+                        console.log('没有数据')
+                    }
+                }).catch(err => {
+//                  this.isLoading = false;
+                    this.$message({
+                        type: 'warning',
+                        message: "加载超时,请重新加载!"
+                    });
+                });
+            },
+            //联动楼层信息
+            getFloorInfo(buildId, cb) {
+                // this.plan.buildName = this.buildList.find(item => {
+                //   return item.buildId === buildId;
+                // }).buildName;
+                this.floorList = null;
+                this.formInline.floorId = null;
+                this.plan.floorId = null;
+                api
+                    .post("/remoteApi/tool/floor/getFloorInfoByUnitIdAndBuildId", {
+                        unitId: this.unitId,
+                        buildId: buildId
+                    })
+                    .then(res => {
+                        if (res && res.code === "success") {
+                            this.floorList = res.data;
+                            if (cb) {
+                                cb = cb();
+                            }
+                        } else {
+                            console.log("没有数据");
+                        }
+                    })
+                    .catch(err => {
+                        this.isLoading = false;
+                        this.$message({
+                            type: "warning",
+                            message: "加载超时,请重新加载!"
+                        });
+                    });
+            },
+            //获取楼层名称
+            getFloorInfoName(floorId){
+                this.plan.floorName = this.floorList.find((item)=>{
+                    return item.floorId === floorId;
+                }).floorName;
+            },
+            getColumnList(){
+                this.isLoading = true;
+                api.get('/remoteApi/tool/deviceInfo/getUpdateFiled').then(res => {
+                    this.isLoading = false;
+                    if (res && res.code === "success") {
+                        for(let key in res.data) {
+                            let obj={};
+                            obj.label=res.data[key];
+                            obj.value=key;
+                            this.columnList.push(obj);
+                        }
+                    } else {
+                        console.log('没有数据')
+                    }
+                }).catch(err => {
+                    this.isLoading = false;
+                    this.$message({
+                        type: 'warning',
+                        message: "加载超时,请重新加载!"
+                    });
+                });
+            },
+            loadData(pagenoFlag) {
+                this.isLoading = true;
+                if(pagenoFlag=='search'){
+                    // debugger
+                    this.widgetInfo.pageNo = 1
+                }
+                api.post('/remoteApi/tool/deviceInfo/findDeviceInfoPage', {
+//                  unitId: this.facilitiesInData.unitId || "",
+					unitId: this.unitId,
+                    buildId: this.formInline.buildId,
+                    // buildName: this.formInline.buildName,
+                    floorId: this.formInline.floorId,
+                    //floorName: this.formInline.floorName,
+                    deviceId:this.formInline.deviceId,
+                    deviceName:this.formInline.deviceName,
+                    deviceTypeIds:this.ZS.MONITOR.deviceQueryType,
+                    status:this.status,
+                    sourceId:this.formInline.sourceId,
+                    laMake:this.formInline.laMake,
+                    laLoop:this.formInline.laLoop,
+                    laPoint:this.formInline.laPoint,
+                    controlHost:this.formInline.controlHost,
+                    // status:this.formInline.status,
+                    pageNo: this.widgetInfo.pageNo,
+                    pageSize: this.widgetInfo.pageSize
+                }).then(res => {
+                    if (res && res.code === "success") {
+                        this.isLoading = false;
+                        this.tableData = res.data.rows;
+                        this.widgetInfo.total = res.data.total === null ? 0 : res.data.total;
+                        this.tableData.forEach(item=>{
+                            item.stateName=this.stateList.find(stateItem=>stateItem.value==item.status).label;
+                        });
+                    } else {
+                        this.isLoading = false;
+                        this.tableData = [];
+                        this.widgetInfo.list = res.data.rows;
+                        this.widgetInfo.total = 0;
+                        console.log('没有数据')
+                    }
+                }).catch(err => {
+                    // console.log(err);
+                    this.isLoading = false;
+                    this.$message({
+                        type: 'warning',
+                        message: "暂无数据，请选择单位之后搜索！"
+                    });
+                });
+            },           
+            // 分页
+            sonHandleCurrentChange(widgetInfo) {
+                this.widgetInfo.pageSize = (widgetInfo.pageSize ? parseInt(widgetInfo.pageSize) : this.widgetInfo.pageSize);
+                this.widgetInfo.pageNo = (widgetInfo.pageNo ? parseInt(widgetInfo.pageNo) : this.widgetInfo.pageNo);
+                //this.loadData('load');
+            },
+            /**
+             *  创建设备类型下拉框
+             */
+            createDeviceTypeSelect: function () {
+                var that = this;
+                that.ZS.MONITOR.deviceQueryType = '';
+                api.post("/remoteApi/tool/deviceInfo/getDeviceTypeInfoList").then(data => {
+                    var data = data['data'] || [];
+                    that.ZS.MONITOR.deviceType = that.toTreeData(data);
+
+                    // 设备大类
+                    if (that.ZS.MONITOR.deviceType[0] != undefined) {
+                        var type1Arr = that.ZS.MONITOR.deviceType[0].children;
+                        for (var key in type1Arr) {
+                            var temp = {};
+                            temp.value = type1Arr[key].id;
+                            temp.label = type1Arr[key].name;
+                            that.deviceSys.push(temp);
+                        }
+                    }
+                })
+            },
+            /**
+             *  设备类型点击事件
+             */
+            selectDeviceSys: function (val) {
+                var that = this;
+                that.optsTemp = [{
+                    value: '00000000',
+                    label: '全部'
+                }];
+
+                // var params = {
+                //     unitId: "CKJGQ_20180312",
+                //     buildId: "CKJGQ_20180312_001",
+                //     floorId: "CKJGQ_20180312_001_U001",
+                //     deviceId: "105"
+                // }
+                //
+                // this.$emit("sendDeviceSysFn", params);
+
+                that.formInline.device = '00000000'
+
+                if(val =='00000000'){
+                    that.ZS.MONITOR.deviceQueryType =null;
+                }else{
+                    if (that.ZS.MONITOR.deviceType[0] != undefined) {
+                        var type1Arr = that.ZS.MONITOR.deviceType[0].children;
+                        for (var key in type1Arr) {
+                            if (type1Arr[key].id == val) {
+                                var typeStr = ''; //设备类型查询
+                                var type2Arr = type1Arr[key].children;
+                                that.options=[];
+                                for (var key2 in type2Arr) {
+                                    var temp = {};
+                                    temp.value = type2Arr[key2].id;
+                                    temp.label = type2Arr[key2].name;
+                                    that.optsTemp.push(temp);
+                                    that.options.push(temp);
+                                    typeStr = typeStr + ',' + temp.value;
+                                }
+                                if (typeStr.length > 0) {
+                                    that.ZS.MONITOR.deviceQueryType = typeStr.substr(1);
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            selectDevice: function (val) {
+                var that = this;
+                if (val == '00000000') {
+                    var typeStr = '';
+                    for (var key in this.options) {
+                        if (this.options[key].value != '00000000') {
+                            typeStr = typeStr + ',' + this.options[key].value;
+                        }
+                    }
+                    if (typeStr.length > 0) {
+                        that.ZS.MONITOR.deviceQueryType = typeStr.substr(1);
+                    }
+                } else {
+                    that.ZS.MONITOR.deviceQueryType = val;
+                }
+            },
+            /**
+             *  创建设备状态下拉框
+             * @private
+             */
+            createDeviceStatusSelect: function () {
+
+            },
+            /**
+             *  将设备类型原始数据转为树形结构
+             * @param data
+             * @returns {Array}
+             * @private
+             */
+            toTreeData: function (data) {
+                var pos = {};
+                var tree = [];
+                var i = 0;
+                while (data.length != 0) {
+                    if (data[i].parentid == -1) {
+                        tree.push({
+                            id: data[i].id,
+                            name: data[i].name,
+                            children: []
+                        });
+                        pos[data[i].id] = [tree.length - 1];
+                        data.splice(i, 1);
+                        i--;
+                    } else {
+                        var posArr = pos[data[i].parentid];
+                        if (posArr != undefined) {
+
+                            var obj = tree[posArr[0]];
+                            for (var j = 1; j < posArr.length; j++) {
+                                obj = obj.children[posArr[j]];
+                            }
+
+                            obj.children.push({
+                                id: data[i].id,
+                                name: data[i].name,
+                                children: []
+                            });
+                            pos[data[i].id] = posArr.concat([obj.children.length - 1]);
+                            data.splice(i, 1);
+                            i--;
+                        }
+                    }
+                    i++;
+                    if (i > data.length - 1) {
+                        i = 0;
+                    }
+                }
+                return tree;
+            },
+            handleEditPlan(method,planObj){
+                this.optMode=method;
+                if('add'==method){//新增
+                    this.dialogFormVisible = true;
+                    this.optTitle="新增";
+                    this.plan={
+                        floorId:null
+                    };
+                    this.deviceIdShow = false;
+                    this.inputDisabled=false;
+                    this.showSaveOrUpdate=true;
+                    this.$nextTick(() => {
+                        this.$refs.dialogScoll.scrollTop = 0;
+                    })
+                }else if('edit'==method){//编辑
+                    this.dialogFormVisible = true;
+                    this.deviceIdShow = false;
+                    this.optTitle="编辑";
+                    this.viewHandle(planObj);
+                    this.getFloorInfo(planObj.buildId, () => {
+                        //this.plan = planObj;
+                        this.plan.cretedBy = api.getGlobalVal("userObj").id;
+                        this.plan.trialId = this.facilitiesInData.id;
+                    });
+                    this.inputDisabled = false;
+                    this.showSaveOrUpdate = true;
+                    this.$nextTick(() => {
+                        this.$refs.dialogScoll.scrollTop = 0;
+                    })
+                }else if('delete'==method){
+                    //删除
+                    this.dialogFormVisible = false;
+                    this.deleteHandle(planObj);
+                }else{//查看
+                    this.dialogFormVisible = true;
+                    this.deviceIdShow = true;
+                    this.optTitle="查看";
+                    this.viewHandle(planObj);
+                    this.getFloorInfo(planObj.buildId, () => {
+                        // this.plan = planObj;
+                        this.plan.cretedBy = api.getGlobalVal("userObj").id;
+                    });
+                    this.inputDisabled = true;
+                    this.showSaveOrUpdate = false;
+                    this.$nextTick(() => {
+                        this.$refs.dialogScoll.scrollTop = 0;
+                    })
+                };
+
+            },
+            viewHandle(planObj) {
+                let that = this;
+                that.isLoading = true;
+
+                api
+                    .get("/remoteApi/tool/deviceInfo/getDeviceById", {
+                        id: planObj.id
+                    })
+                    .then(res => {
+                        that.isLoading = false;
+                        if (res && res.code === "success") {
+                            that.plan = res.data;
+                        } else {
+                            that.$message({
+                                message: "获取失败",
+                                type: "error"
+                            });
+                        }
+                    })
+                    .catch(err => {
+                        console.log(err);
+                        that.isLoading = false;
+                    });
+            },
+
+            deleteHandle(planObj){//删除
+                var that=this;
+                that.plan = JSON.parse(JSON.stringify(planObj));
+                that.$confirm('确定要停用吗?', '提示', {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    that.isLoading = true;
+                    api.post("/remoteApi/tool/deviceInfo/deleteDeviceInfoById",
+                        {
+                            id:that.plan.id,
+                            userId:api.getGlobalVal('userObj').id,
+                            trailId:that.facilitiesInData.id
+                        }
+                    ).then(res => {
+                        that.isLoading = false;
+                        if (res && res.code === "success") {
+                            that.$message({
+                                message: "已停用",
+                                type: "success"
+                            });
+                            that.loadData('search');
+
+                        } else {
+                            that.$message({
+                                message: "停用异常",
+                                type: "error"
+                            });
+                        }
+                    })
+                        .catch(err => {
+                            console.log(err);
+                            that.isLoading = false;
+                        })
+                }).catch(() => {});
+            },
+            saveOrUpdateForm(){//保存或更新操作
+                let that=this;
+                var reg=/^[0-9]+.?[0-9]*$/;
+                if(that.plan.longitude && !reg.test(that.plan.longitude)){
+                    debugger
+                    that.$message({
+                        message: "经度请输入数字",
+                        type: "warning"
+                    });
+                    return;
+                }
+
+                if(that.plan.latitude && !reg.test(that.plan.latitude)){
+                    that.$message({
+                        message: "纬度请输入数字",
+                        type: "warning"
+                    });
+                    return;
+                };
+                if(that.plan.mapX && !reg.test(that.plan.mapX)){
+                    that.$message({
+                        message: "百度坐标X为数字",
+                        type: "warning"
+                    });
+                    return;
+                };
+                if(that.plan.mapY && !reg.test(that.plan.mapY)){
+                    that.$message({
+                        message: "百度坐标Y为数字",
+                        type: "warning"
+                    });
+                    return;
+                };
+                if('add'==that.optMode){
+                    if (that.plan.buildId == '' || that.plan.buildId == null) {
+                        that.$message({
+                            type: 'warning',
+                            message: "请选择楼栋"
+                        });
+                        return;
+                    };
+                    if (that.plan.floorId==''  || that.plan.floorId == null) {
+                        that.$message({
+                            type: 'warning',
+                            message: "请选择楼层"
+                        });
+                        return;
+                    };
+                    if (that.plan.deviceName=='' || that.plan.deviceName == null) {
+                        that.$message({
+                            type: 'warning',
+                            message: "设备名称不能为空"
+                        });
+                        return;
+                    };
+                    that.plan.createUserId= api.getGlobalVal('userObj').id;
+                    that.plan.unitId=that.facilitiesInData.unitId;
+                    that.plan.trailId = that.facilitiesInData.id;
+                    that.isLoading = true;
+                    api.post("/remoteApi/tool/deviceInfo/addRecordDevice",that.plan).then(res => {
+                        that.isLoading = false;
+                        if (res && res.code === "success") {
+                            that.dialogFormVisible=false;
+                            that.$message({
+                                message: "保存成功",
+                                type: "success"
+                            });
+                            that.loadData('search');
+
+                        } else {
+                            that.$message({
+                                message: "保存失败",
+                                type: "error"
+                            });
+                        }
+                    })
+                        .catch(err => {
+                            console.log(err);
+                            that.isLoading = false;
+                        })
+                }else if('edit'==that.optMode){
+                    if (that.plan.buildId == '' || that.plan.buildId == null) {
+                        that.$message({
+                            type: 'warning',
+                            message: "请选择楼栋"
+                        });
+                        return;
+                    };
+                    if (that.plan.floorId==''  || that.plan.floorId == null) {
+                        that.$message({
+                            type: 'warning',
+                            message: "请选择楼层"
+                        });
+                        return;
+                    };
+                    if (that.plan.deviceName=='' || that.plan.deviceName == null) {
+                        that.$message({
+                            type: 'warning',
+                            message: "设备名称不能为空"
+                        });
+                        return;
+                    };
+                    that.plan.updateUser=api.getGlobalVal('userObj').id;
+                    that.plan.unitId=that.facilitiesInData.unitId;
+                    that.plan.trailId = that.facilitiesInData.id;
+                    that.isLoading = true;
+                    api.post("/remoteApi/tool/deviceInfo/updateRecordDeviceByDeviceId",that.plan).then(res => {
+                        that.isLoading = false;
+                        if (res && res.code === "success") {
+                            that.dialogFormVisible=false;
+                            that.$message({
+                                message: "更新成功",
+                                type: "success"
+                            });
+                            that.loadData('load');
+                        } else {
+                            that.$message({
+                                message: "更新失败",
+                                type: "error"
+                            });
+                        }
+                    })
+                        .catch(err => {
+                            console.log(err);
+                            that.isLoading = false;
+                        })
+                }else{
+                    console.log("异常保存或更新模式")
+                }
+            },
+            batchUpdate(){
+                for(let i=0;i<this.dynamicValidateForm.domains.length;i++){
+                    if(i>0){
+                        this.dynamicValidateForm.domains.splice(i, 1)
+                    }else{
+                        this.dynamicValidateForm.domains[i].columnKey=null;
+                        this.dynamicValidateForm.domains[i].textKey=null;
+                        this.dynamicValidateForm.domains[i].columnValue=null;
+                        this.dynamicValidateForm.domains[i].textValue=null;
+                    }
+                };
+                this.visible=true;
+            },
+            //批量修改
+            batchSubmitForm(formName) {
+                const that=this;
+                //数据组装
+                let keyValueStr='';
+                for(let i=0;i<that.dynamicValidateForm.domains.length;i++){
+                    keyValueStr = (that.dynamicValidateForm.domains[i].columnValue +'='+ that.dynamicValidateForm.domains[i].textValue)
+                    //keyValueStr[that.dynamicValidateForm.domains[i].columnValue]=that.dynamicValidateForm.domains[i].textValue;
+                };
+                that.$refs[formName].validate((valid) => {
+                    if (valid) {
+                        that.isLoading = true;
+                        api.post("/remoteApi/tool/deviceInfo/batchUpdateDeviceByCondition",{
+                            unitId: this.facilitiesInData.unitId,
+                            // unitId:'CKJGQ_20180312',
+                            orgCode: this.facilitiesInData.subCenterCode,
+                            trialId: this.facilitiesInData.id,
+                            buildId: this.formInline.buildId,
+                            floorId: this.formInline.floorId,
+                            deviceId:this.formInline.deviceId,
+                            deviceName:this.formInline.deviceName,
+                            deviceTypeIds:this.ZS.MONITOR.deviceQueryType,
+                            keyValueStr:keyValueStr,
+                            userId:api.getGlobalVal('userObj').id,
+                            //新增的五个
+
+                            sourceId:this.formInline.sourceId,
+                            laMake:this.formInline.laMake,
+                            laLoop:this.formInline.laLoop,
+                            laPoint:this.formInline.laPoint,
+                            controlHost:this.formInline.controlHost
+                            //   controlHost:'32'
+                        }).then(res => {
+                            that.isLoading = false;
+                            if (res && res.code === "success") {
+                                that.visible=false;
+                                that.$message({
+                                    message: "更新成功",
+                                    type: "success"
+                                });
+                                that.loadData('search');
+                            } else {
+                                if(res.message){
+                                    that.$message({
+                                        message: res.message,
+                                        type: "error"
+                                    });
+                                    return
+                                }
+                                if(res.rspMsg){
+                                    that.$message({
+                                        message: res.rspMsg,
+                                        type: "error"
+                                    });
+                                    return
+                                }
+                            }
+                        })
+                            .catch(err => {
+                                console.log(err);
+                                that.isLoading = false;
+                            })
+                    } else {
+                        console.log('批量更新校验失败');
+                        return false;
+                    }
+                });
+            },
+            resetForm(formName) {
+                this.$refs[formName].resetFields();
+            },
+            removeDomain(item) {
+                let index = this.dynamicValidateForm.domains.indexOf(item);
+                if (index !== -1) {
+                    this.dynamicValidateForm.domains.splice(index, 1)
+                }
+            },
+            addDomain() {
+                this.dynamicValidateForm.domains.push({
+                    columnKey: 'columnKey:' + Date.now(),
+                    columnValue: '',
+                    textKey: 'textKey:' + Date.now(),
+                    textValue: '',
+
+                });
+            }
+        }
+    }
+</script>
+<style lang="scss" scoped>
+    @import "~/assets/css/editArchivesPoint.scss";
+    .storied-suilding-wrapper {
+        /deep/.demo-table-expand {
+            .el-form-item {
+                label {
+                    width: 80px;
+                }
+                .el-form-item__content {
+                    width: calc(100% - 80px);
+                }
+                &.t-right .el-form-item__content {
+                    width: 100%;
+                }
+                .el-button+.el-button{
+                    margin-left:5px;
+                }
+            }
+        }
+        /deep/.el-table {
+            .el-table__body-wrapper {
+                height: calc(100vh - 90px - 60px - 140px - 95px - 85px);
+                overflow: hidden;
+                overflow-y: auto;
+            }
+        }
+    }
+    .plxg-wrap{
+        height: 100px;
+        .demo-dynamic{
+            height: 100px !important;
+            .form-list-wrapper{
+                height: 100px !important;
+            }
+        }
+    }
+	/deep/.el-radio{
+		margin-left: 16px;
+      .el-form-item__label{
+        padding: 0;
+        color:#525C66;
+        font-size: 16px;
+      }
+      .el-radio__label{
+        font-size: 16px;
+        font-weight:400;
+        /*color: rgba(37,40,46,1);*/
+      }
+      .el-select{
+        width: 100%;
+      }
+    }
+
+</style>
+

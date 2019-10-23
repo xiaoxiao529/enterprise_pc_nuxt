@@ -1,0 +1,63 @@
+.mainPageNew {
+  .right-main-warpper {
+    background: #fff;
+    height: calc(100vh - 55px - 20px - 20px); //头部高度，面包屑高度，底部空余
+    overflow: hidden;
+    border: 1px solid rgba(225, 229, 235, 1);
+  }
+
+  .el-table th {
+    border-bottom: none !important;
+    background: rgba(240, 243, 247, 1) !important;
+    font-weight: bold;
+    color: rgba(82, 92, 102, 1);
+    border-top: none !important;
+  }
+
+  .el-table td,
+  .el-table th.is-leaf {
+    border-bottom: none !important;
+  }
+
+  .newTable {
+    height: calc(100% - 215px);
+
+    .has-gutter .cell {
+      font-size: 14px;
+    }
+  }
+
+  .el-pagination {
+    background: #fff
+  }
+}
+
+.h2-title-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 65px;
+  padding: 0 25px;
+  border-bottom: 1px solid rgba(225, 229, 235, 1);
+
+  .tilte-h2 {
+    font-size: 18px;
+    font-weight: bold;
+    color: rgba(37, 40, 46, 1);
+    text-align: left;
+    flex: 1;
+  }
+
+  .title-btn-wrap {
+    text-align: right;
+    flex: 1;
+  }
+}
+
+//新增任务弹框
+.upload-content-big {
+  .el-form-item .el-form-item__label {
+    margin-bottom: 0;
+    padding: 0;
+  }
+}

@@ -1,0 +1,2376 @@
+<!-- card -->
+<template>
+  <!-- pigm,ioa组件容器 -->
+  <div id="pin" style="position:relative">
+    <div id="floor-g2map" class="floor-g2map"></div>
+    <div class="DeviceTable" ref="DeviceTable"  v-show="showBtn">
+    	<el-scrollbar style="height: 100%;">
+				<el-table
+				    :data="tableData"
+				    border
+				    @cell-dblclick="positionDevice"
+				    @selection-change="handleSelectionChange"
+				    >
+				    <el-table-column
+				      type="index"
+				      label="序号"
+				      width="70">
+				    </el-table-column>
+				    <el-table-column
+				      prop="deviceTypeName"
+				      label="设备名称"
+				      :show-overflow-tooltip="true"
+				      width=""
+				      >
+				    </el-table-column>
+				    <el-table-column
+				      prop="deviceAddress"
+				      :show-overflow-tooltip="true"
+				      label="安装位置">
+				    </el-table-column>
+				    <el-table-column
+				      label="操作"
+				      width="90"
+				      >
+				      <template slot-scope="scope">
+				        <span style="cursor: pointer;" @click.stop="tagDian(scope.$index, scope.row)"  :class="{ red: colorIndex == scope.$index }" >{{tagDianText}}</span>
+				      </template>
+				    </el-table-column>
+				</el-table>
+			</el-scrollbar>
+			<div class="arrow" @click="foldHandle"><b class="ggicon-list"></b></div>
+		</div>
+		<div class="deviceBox">
+			<p>设备名称： <span class="device-name">配电箱</span></p>
+			<!--<p>点       位：<span class="device-position">100.1/103.22</span></p>-->
+			<p class="tag-btn"><a href="javascript:;" @click="sureTag">确认标注</a></p>
+		</div>
+  </div>
+</template>
+<script>
+import api from "~/config/http";
+import ElectricalPanel from "~/pages/electricalPanel/ElectricalPanel";
+import {
+  Message
+} from 'element-ui';
+import monitorFloorCrud from "~/assets/page/real-time-monitoring/js/monitorFloorCrud";
+var special_device_type = {
+  "insideCode": "19020000",
+  "outsideCode": "19030000",
+  "fireMonitorCode": "19050000",
+  "firePool": "05010000",
+  "fireWaterTank": "05020000",
+  "smokeMonitorCode": "19210000",
+  "fireDoor": "14020000111111",
+  "sprayEndCode": "19080000",
+  "waterLevel": "19150000"
+}
+var insideTypeCode = special_device_type.insideCode; //室内水压监测
+var outsideTypeCode = special_device_type.outsideCode; //室外水压监测
+var fireMonitorTypeCode = special_device_type.fireMonitorCode; //电气火灾
+var smokeMonitor = special_device_type.smokeMonitorCode; //烟感
+var fireDoor = special_device_type.fireDoor; //防火门
+var sprayEndCode = special_device_type.sprayEndCode; //喷淋末端
+var waterLevelCode = special_device_type.waterLevel; //水位传感器
+var deviceIconsNew =require('static/deviceIcons.json');
+export default {
+  name: "floor_g2map",
+  props: {
+    floorObj: Object,
+    searchObj: Object,
+  },
+  components: {
+    ElectricalPanel
+  },
+  data() {
+    return {
+    	tableData: [],
+    	tagDianText:"标点",
+    	selectPosition:false,
+	    currentPage:1, //初始页
+	    pagesize:5,    //    每页的数据
+	    onOff:true,
+      userObj: api.getGlobalVal('userObj'),
+      that: this,
+      gets: true,
+      dlClick: this.$store.state.ZS.MONITOR.dlClick,
+      deviceListData:{},
+      iscreenX:0,
+      iscreenY:0,
+      plantuUnitId:"",
+      showBtn:true,
+      ZS: {
+        MONITOR: {
+          floor_g2map: {},
+          iconConf: {
+            deviceIcons: ''
+          }
+
+        },
+      },
+      zheXianContentChart: '',
+      mAContentChart: '',
+      mpaContentChart: '',
+      waterLevelContentChart: '',
+      colorIndex: -1,
+    }
+  },
+  mounted() {
+    // 初始化地图
+    this.map_init('floor-g2map');
+    this.getIconConfig();
+		this.plantuUnitId = this.$store.state.shUnitId;
+    // var picUrl = api.forent_url.pic_url + "/floorImage/" + this.$store.state.ZS.MONITOR.picUrl; 
+    // console.log(this.$store.state.ZS.MONITOR.picUrl,'this.$store.state.ZS.MONITOR.picUrl')
+    // var floorId = this.$store.state.ZS.MONITOR.currentFloor;
+    // var buildId = this.$store.state.ZS.MONITOR.currentBuild;
+    // this.addPicToMap(picUrl, buildId, floorId);
+    // this.getMonitorPlan(this.userObj.orgCode,this.map_init);
+    this.ZS.MONITOR.showWindow = this.showWindow;
+    this.showBtn = !this._Storage.getObj("fileItem", "obj").limtShow ? false : true;
+  },
+  methods: {
+  	positionDevice(row,column,event,cell){
+      // if(row.latitude =='' ||row.latitude =='' ||)
+      var point = new g2.geom.Point({
+            x: row.longitude,
+            y: row.latitude,
+            spatialReference: g2.geom.SpatialReference.EPSG3857
+          });          
+      this.ZS.MONITOR.floor_g2map.setCenter(point);
+  	//	console.log(row.latitude,row.longitude)
+  	},
+
+    	tagDian(index, row) {
+	    	this.deviceListData = row;
+				this.selectPosition = true;
+				this.colorIndex = index;
+        document.body.style.cursor="crosshair"; 
+      },
+      // 初始页currentPage、初始每页数据数pagesize和数据data
+	    handleSizeChange: function (size) {
+	            this.pagesize = size;
+	            console.log(this.pagesize)  //每页下拉显示数据
+	    },
+	    handleCurrentChange: function(currentPage){
+	            this.currentPage = currentPage;
+	            console.log(this.currentPage)  //点击第几页
+	    },
+	    handleSelectionChange(val) {
+        this.multipleSelection = val;
+      },
+	    foldHandle(){
+	    	this.$refs.DeviceTable.className ="DeviceTable"
+	    	if(this.onOff){
+	    		this.$refs.DeviceTable.className ="DeviceTable move-in"
+	    	}else{
+	    		this.$refs.DeviceTable.className ="DeviceTable move-out"
+	    	}
+	    	this.onOff = !this.onOff;
+	    },
+    /**
+     * 切换楼层平面图
+     * @param picUrl 图片路径
+     * @param buildId 建筑id
+     * @param floorId 楼层id
+     */
+    addPicToMap: function (picUrl, buildId, floorId) {
+    	console.log(picUrl,"picUrlpicUrl")
+      var that = this;
+      var img = new Image();
+      img.src = picUrl;
+      img.onload = function () {
+        //  清除图层及事件
+        that.clearLayersAndEvents();
+
+        var w = img.width * 1000;
+        var h = img.height * 1000;
+        //创建一个图像图层
+        that.ZS.MONITOR.floor_imageLayer = new that.gs2.lys.ImageLayer({
+          imageType: 702,
+          extent: [
+            0,
+            0,
+            w,
+            h
+          ], //图片范围，请按照坐标系的范围给出，此为3857的坐标系范围        
+          url: picUrl // 图层服务 url
+        });
+        // 将 图像图层添加到地图
+        that.ZS.MONITOR.floor_g2map.addLayer(that.ZS.MONITOR.floor_imageLayer);
+        var point = new that.gs2.geom.Point({
+          x: w / 2,
+          y: h / 2,
+          spatialReference: that.gs2.geom.SpatialReference.EPSG3857
+        });
+        // ZS.MONITOR.floor_g2map.setCenter(point);
+        // ZS.MONITOR.floor_g2map.zoomTo(2);
+        that.ZS.MONITOR.floor_g2map.pan(new that.gs2.geom.Envelope({
+          minx: 0,
+          miny: 0,
+          maxx: w,
+          maxy: h
+        }));
+
+        //创建元素图层
+        var elementLayer = new that.gs2.lys.ElementLayer();
+        that.ZS.MONITOR.floor_g2map.addLayer(elementLayer);
+        that.ZS.MONITOR.deviceLayer = elementLayer; //全局标点使用
+
+        //创建tooltip管理
+        that.ZS.MONITOR.floor_tooltipWare = new that.gs2.ext.TooltipWare({
+          excluseLayerIds: elementLayer.getLayerId(),
+          map: that.ZS.MONITOR.floor_g2map
+        });
+
+
+        if (that.ZS.MONITOR.iconConf.deviceIcons) {
+          that.loadDevice(floorId, buildId);
+        } else {
+          if (!deviceIconsNew && !deviceIconsNew.deviceIcons) return;
+              that.initSymbols(deviceIconsNew.deviceIcons).then(function (obj) {
+                that.ZS.MONITOR.iconConf = obj;
+                that.loadDevice(floorId, buildId)
+              })
+          // $.ajax({
+          //   url: '/deviceIcons.json',
+          //   type: 'GET',
+          //   dataType: 'json',
+          //   success: function (data) {
+          //     // ZS.MONITOR.iconConf = data;
+          //     if (!data && !data.deviceIcons) return;
+          //     that.initSymbols(data.deviceIcons).then(function (obj) {
+          //       that.ZS.MONITOR.iconConf = obj;
+          //       that.loadDevice(floorId, buildId)
+          //     })
+          //   }
+          // })
+        }
+
+      }
+
+    },
+    // 加载设备信息
+    loadDevice: function (floorId, buildId) {
+
+      this.getEquipmentListByFloorId(floorId, buildId, this.loadEquipmentPoint);
+    },
+    // 加载楼层设备点信息
+    loadEquipmentPoint: function (data) {
+
+      var that = this;
+      for (var key in data) {
+        var equip = data[key];
+        var status = 'normal';
+        if (equip['runState'] == '1') { //报警
+          status = 'calltheplice';
+        } else if (equip['runState'] == '2') { //正常
+          status = 'fault';
+        } else if (equip['runState'] == '98') { //电气
+          status = 'warning';
+        }
+
+        if (equip['longitude'] == "" || equip['latitude'] == "") {
+          continue;
+        }
+        var iconUrl = that.getIconUrl(equip['deviceTypeId'], status);
+        // 设备标点
+        that.drawPoint(equip['longitude'], equip['latitude'], iconUrl, equip);
+      }
+      window.onerror = null;
+      //  监听设备点击事件
+      that.ZS.MONITOR.floor_g2map.on("click", function (button, shift, screenX, screenY, mapscreenXX, mapY, handle) {
+        var ele = that.ZS.MONITOR.deviceLayer.hitTest(screenX, screenY);
+        that.ZS.MONITOR.floor_tooltipWare.clear();
+        if (ele) {
+          var element = ele.element;
+          that.ZS.MONITOR.showWindow(element);
+        }
+        that.iscreenX = mapscreenXX;
+        that.iscreenY = mapY;
+        if(that.selectPosition){
+        	var deviceTypeName = that.deviceListData.deviceTypeName;
+
+        	var devicePosition = screenX + "/" + screenY ;
+        	$(".deviceBox .device-name").empty().html(deviceTypeName)
+        	//$(".deviceBox .device-position").empty().html(devicePosition)
+        	$(".deviceBox").show().css({"left":screenX,"top":screenY});
+        	document.body.style.cursor="default";       	
+        	that.selectPosition = false;
+        }
+      });
+      that.ZS.MONITOR.floor_g2map.on("mousemove", function (button, shift, screenX, screenY, mapX, mapY, handle) {
+        document.getElementById('floor-g2map').style.cursor = '';
+        var ele = that.ZS.MONITOR.deviceLayer.hitTest(screenX, screenY);
+        if (ele) {
+          document.getElementById('floor-g2map').style.cursor = 'pointer';
+        }
+      });
+      
+//    $(".tag-btn a").click(function(){
+//				
+//			})
+      
+      that.mapCenterAndShow();
+    },
+    
+    //确认标点
+    sureTag:function(){
+    	var that = this;
+			api.post("/remoteApi/tool/deviceInfo/updateDevicePointAddress", {
+          longitude: that.iscreenX,
+		      latitude: that.iscreenY,
+		      deviceId: that.deviceListData.deviceId,
+		  		userId: api.getGlobalVal("userId"),
+		  		trailId:this._Storage.getObj("fileItem", "obj").id,
+		  		unitId:this._Storage.getObj("fileItem", "obj").unitId
+      }).then((data)=>{
+    		if(data.code == "success"){
+    			$(".deviceBox").hide()
+    			var buildId = that.$store.state.shBuildId;
+					var floorId = that.$store.state.ZS.MONITOR.currentFloor;
+					var unitId = that.$store.state.shUnitId;
+					var deviceId = that.$store.state.ZS.MONITOR.deviceId
+					var deviceTypeIds = that.$store.state.ZS.MONITOR.deviceQueryType
+    			that.$emit("searchFloor", {
+		        buildId: buildId,
+		        unitId:unitId,
+		        floorId:floorId,
+		        deviceId: deviceId,
+		        deviceTypeIds:deviceTypeIds
+		      })
+    			
+    		}
+    	})
+      return false;
+    },
+    
+    /**
+     * 根据设备类型和状态获取图标url
+     * @param type 设备类型(1：烟感设备，2：水压监测)
+     * @param status 设备状态
+     * @private
+     */
+    getIconUrl: function (type, status) {
+      var that = this;
+      var iconObj = that.ZS.MONITOR.iconConf[status + '_' + type];
+      if (!(iconObj && iconObj.source)) return;
+      var imgBase64 = "data:image/jpg;base64," + iconObj.source;
+      var obj = new that.gs2.syms.Picturemarkersymbol({
+        source: imgBase64,
+        width: iconObj.width,
+        height: iconObj.height,
+        rotation: "0",
+        offsetX: iconObj.offsetX,
+        offsetY: iconObj.offsetY
+      })
+      if (obj) {
+        // icon = iconObj.icon;
+        return obj
+      }
+      return
+    },
+    /**
+     *  地图标点
+     * @param x
+     * @param y
+     * @param icon 图标（base64）
+     * @param bind_param 元素绑定参数
+     */
+    drawPoint: function (x, y, icon, bind_param) {
+      var that = this;
+      //构造一个点(坐标，空间参考系）
+      var point = new this.gs2.geom.Point({
+        x: x,
+        y: y,
+        spatialReference: this.gs2.geom.SpatialReference.EPSG3857
+      });
+      var ele = new this.gs2.ele.Element({
+        geometry: point,
+        symbol: icon,
+        id: bind_param.deviceId
+      });
+      ele.tag = bind_param;
+      that.ZS.MONITOR.deviceLayer.add(ele);
+    },
+    /* 查找平面图中心 并展示 */
+    mapCenterAndShow: function () {
+      var that = this;
+      if (that.$store.state.ZS.MONITOR.currentDevice) {
+        var element = that.ZS.MONITOR.deviceLayer.find(that.$store.state.ZS.MONITOR.currentDevice);
+        if (!element) return;
+        that.ZS.MONITOR.floor_g2map.setCenter(element.geometry);
+        that.ZS.MONITOR.showWindow(element);
+        that.$store.commit('updateZSDevice', '');
+        //that.$store.state.ZS.MONITOR.currentDevice = undefined;
+      }
+    },
+    /**
+     *  清除图层及事件
+     */
+    clearLayersAndEvents: function () {
+      var that = this;
+      var arr = that.ZS.MONITOR.floor_g2map.getLayers();
+      for (var i = 0; i < arr.length; i++) {
+        that.ZS.MONITOR.floor_g2map.removeLayer(arr[i]);
+        i--;
+      }
+      that.ZS.MONITOR.floor_g2map.un("click");
+      that.ZS.MONITOR.floor_g2map.un("mousemove");
+    },
+    /**
+     * 根据楼层id获取设备列表
+     * @param floorId 楼层id
+     * @param buildId 建筑id
+     * @param callback
+     * @private
+     */
+    getEquipmentListByFloorId: function (floorId, buildId, callback, deviceTypeId) {
+      var deviceTypeId = deviceTypeId || this.$store.state.ZS.MONITOR.deviceQueryType;
+      var unitId = this.plantuUnitId;
+    	var buildId = this.$store.state.shBuildId;
+			var floorId = this.$store.state.ZS.MONITOR.currentFloor;
+			var deviceId = this.$store.state.ZS.MONITOR.deviceId?this.$store.state.ZS.MONITOR.deviceId:"";
+    	var deviceTypeId = deviceTypeId || this.$store.state.ZS.MONITOR.deviceQueryType;
+    	api.post("/remoteApi/tool/deviceInfo/getDeviceListByCondition", {
+          unitId: unitId,
+          buildId: buildId,
+          floorId: floorId
+		      /*
+			  	deviceTypeIds: deviceTypeId,
+			  	deviceId:deviceId*/
+      }).then((response)=>{
+      	
+      		this.tableData = [];
+      		var data = response.data;
+      		this.tableData = data;
+      		console.log(this.tableData,"response")
+	    		callback(data);
+    	})
+    
+    },
+    /**
+     * 地图初始化
+     * @param containerId
+     */
+    map_init: function (containerId) {
+      var that = this;
+      // 创建地图
+      var g2map = new this.gs2.maps.Map({
+        defaultExtent: {
+          center: [0, 0],
+          maxZoom: 8,
+          minZoom: 3,
+          // extent: [0, 0, 3000000, 3000000], //图片范围，请按照坐标系的范围给出，此为3857的坐标系范围
+          projection: "EPSG:3857", // 设置地图坐标系
+          level: 5
+        } // 为方便展示设置视野中心点的范围
+      });
+
+      // 初始化地图，传入要初始化的DOM对象的id
+      g2map.init({
+        targetId: containerId
+      });
+      that.ZS.MONITOR.floor_g2map = g2map;
+      that.$store.commit('updateFloor_g2map', g2map);
+
+    },
+    /**
+     *  获取设备图标配置信息
+     * @param callback
+     * @private
+     */
+    getIconConfig: function (callback) {
+      var that = this;
+       if (!deviceIconsNew && !deviceIconsNew.deviceIcons) return;
+              that.initSymbols(deviceIconsNew.deviceIcons).then(function (obj) {
+                that.ZS.MONITOR.iconConf = obj;
+                that.loadDevice(floorId, buildId)
+                
+              })
+      // $.ajax({
+
+      //   url: '/deviceIcons.json',
+      //   type: 'GET',
+      //   dataType: 'jsonp',
+      //   success: function (data) {
+      //     // ZS.MONITOR.iconConf = data;
+      //     if (!data && !data.deviceIcons) return;
+      //     that.initSymbols(data.deviceIcons).then(function (obj) {
+      //       that.ZS.MONITOR.iconConf = obj;
+      //       callback();
+      //     })
+      //   }
+      // })
+    },
+    /**
+     * 初始化符号库
+     */
+    initSymbols: function (icons) {
+      var that = this;
+      var mapObj = {};
+      var dtd = $.Deferred();
+      var iconKeys = Object.keys(icons);
+      for (var key in icons) {
+        for (var key1 in icons[key]) {
+          that.loadImg(icons[key][key1], key + '_' + key1).then(function (symbol, key) {
+            mapObj[key] = symbol;
+            var mapObjKeys = Object.keys(mapObj);
+            if (iconKeys.length == mapObjKeys.length) {
+              dtd.resolve(mapObj);
+            }
+          })
+        }
+      }
+      return dtd;
+    },
+    loadImg: function (imgSrc, key) {
+      var that = this;
+      var dtd = $.Deferred();
+      var img = new Image();
+      if (!imgSrc.icon) {
+        dtd.resolve('', key);
+        return dtd;
+      }
+      if (imgSrc.text == "手提式酸碱灭火器_报警") {
+        img.src = "data:image/jpg;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAQCAYAAAAbBi9cAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyFpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNi1jMTQyIDc5LjE2MDkyNCwgMjAxNy8wNy8xMy0wMTowNjozOSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChXaW5kb3dzKSIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo5ODM3QTg5QzdCNzcxMUU4OTI0QkY0Nzk3OTM5N0ZBNSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo5ODM3QTg5RDdCNzcxMUU4OTI0QkY0Nzk3OTM5N0ZBNSI+IDx4bXBNTTpEZXJpdmVkRnJvbSBzdFJlZjppbnN0YW5jZUlEPSJ4bXAuaWlkOjk4MzdBODlBN0I3NzExRTg5MjRCRjQ3OTc5Mzk3RkE1IiBzdFJlZjpkb2N1bWVudElEPSJ4bXAuZGlkOjk4MzdBODlCN0I3NzExRTg5MjRCRjQ3OTc5Mzk3RkE1Ii8+IDwvcmRmOkRlc2NyaXB0aW9uPiA8L3JkZjpSREY+IDwveDp4bXBtZXRhPiA8P3hwYWNrZXQgZW5kPSJyIj8+ckcYpAAAAcBJREFUeNqkkz8sREEQxn+7exRH7hqivEQUKoVCiEojUYhIJDqVXENUJDT+NBSiFhKJipJKUEh0kksU115xihMJIZ6I5r3bse9d/PfOYZJNdmd3vpn55lvlt7VdACn+Zw/KAd27TTruhershKYm5Pi4GpBXHcgYzP4+KpUiGBiAp6dYIF0tjR4bg1IJe3qKnpys2lsi9qalBZ3NEoyMwOMjiYMDZG8PKRS+TxqHY+bmsNvbcHnpCvcor62hl5Ycaap2INXbC+3t2K2tV19YTQiihoZqBKqvRy8sIJubEATuha5UIYJdWcFMTzuxfFXLl6npiQlUayv25ATtJqW6uyO/PTyEqytobIRkEuuSvZ8aIZBbEq6gr0/k+lr8np7obEsleTFbLEY+v6NDxPmD4WF5iQsxPrSm5+ex6+twcwMNDSjX5tt8E5GuQi2VXYsR8eH5M0eqvx+am7E7O1BXh1lcpLy8jORyyPk5srGBWV2NguXoCO7u0KOjnzhKJtPG6cROTSH5fLzqXAJ8vxKYyWB2dwkGB+H21osEGapWORL1+Pivf6uZnaU8M1OpSHV1pSMO/mhydub9+PtrNO9ZgAEA7ly54Z+EaxIAAAAASUVORK5CYII=";
+      } else {
+        img.src = "data:image/jpg;base64," + imgSrc.icon;
+      }
+      //  */
+      img.onload = function () {
+        var w = img.width;
+        var h = img.height;
+        var markerSymbol = new that.gs2.syms.Picturemarkersymbol({
+          source: imgSrc.icon,
+          width: w,
+          height: h,
+          rotation: "0",
+          opacity: "1",
+          offsetX: w / 2,
+          offsetY: h / 2
+        });
+        dtd.resolve(markerSymbol, key);
+      }
+      return dtd;
+    },
+    showWindow: function (element) {
+      var that = this;
+      //当前的楼栋id
+      var buildId = this.$store.state.ZS.MONITOR.currentBuild;
+      this.ZS.MONITOR.floor_tooltipWare.clear();
+      var point = new this.gs2.geom.Point({
+        x: element.geometry.x,
+        y: element.geometry.y,
+        spatialReference: this.gs2.geom.SpatialReference.EPSG3857
+      });
+
+      //模板拼接
+      var data = element.tag;
+      var status = ''; //状态
+      var warDateStr = ''; //报警时间字段
+      if (data['runState'] == '1') {
+        status = '报警';
+        warDateStr = '<p class="gg-hydraulic-info">报警时间：<span>' + data['deviceTime'] + '</span></p>';
+      } else if (data['runState'] == '2') {
+        status = '故障';
+        warDateStr = '<p class="gg-hydraulic-info">报警时间：<span>' + data['deviceTime'] + '</span></p>';
+      } else {
+        status = '正常';
+      }
+
+      var deviceTypeId = data['deviceTypeId'];
+
+
+      var tooltipTemplate = "";
+      if (deviceTypeId == fireMonitorTypeCode) {
+        //电气火灾的模板html
+        tooltipTemplate = this.fireHtml();
+      } else if (deviceTypeId == insideTypeCode || deviceTypeId == outsideTypeCode || deviceTypeId == sprayEndCode) {
+        //室内室外消防水压监测装置
+        tooltipTemplate = this.firewater();
+      } else if ( /*deviceTypeId == firePool || deviceTypeId == fireWaterTank || */ deviceTypeId == waterLevelCode) {
+        //消防水池
+        tooltipTemplate = this.fireWaterPool();
+      } else if (deviceTypeId == smokeMonitor) {
+        //烟感
+        tooltipTemplate = this.smokeHtml();
+      } else {
+        //其他
+        tooltipTemplate = this.fireOther();
+      }
+      if (deviceTypeId == fireMonitorTypeCode || deviceTypeId == insideTypeCode || deviceTypeId == outsideTypeCode /*|| deviceTypeId == firePool || deviceTypeId == fireWaterTank*/ ||
+        deviceTypeId == smokeMonitor || deviceTypeId == sprayEndCode || deviceTypeId == waterLevelCode) {
+        var tooltip = new this.gs2.ext.Tooltip({
+          anchor: point, //提示在地图上停靠位置
+          content: tooltipTemplate, //提示内容
+          layerId: this.ZS.MONITOR.deviceLayer.getLayerId(), //提示所在图层ID
+          //offset: [-630, -650], //位置偏移量                            
+          offset: (api.getGlobalVal("attribute") == 'linyi' ? [-640, -615] : [-630, -650]),
+          className: 'g2-tooltip' //tooltip样式
+        });
+        this.ZS.MONITOR.floor_tooltipWare.add(tooltip); //将tooltip添加到tooltipWare中
+      } else {
+        var tooltip = new this.gs2.ext.Tooltip({
+          anchor: point, //提示在地图上停靠位置
+          content: tooltipTemplate, //提示内容
+          layerId: this.ZS.MONITOR.deviceLayer.getLayerId(), //提示所在图层ID
+          offset: (api.getGlobalVal("attribute") == 'linyi' ? [-640, -615] : [-630, -650]), //位置偏移量
+          className: 'g2-tooltip' //tooltip样式
+        });
+        this.ZS.MONITOR.floor_tooltipWare.add(tooltip); //将tooltip添加到tooltipWare中
+      }
+
+      //查询楼栋类型
+      //当前用户的 orgCode
+      var orgCode = this.userObj.orgCode;
+      //楼栋的类型  01	超高层建筑02	一类高层建筑03	二类高层建筑04	高层厂房05	高层库房06	低层民用建筑07	低层厂房08	低层库房09	地下建筑99	其他建筑
+      //var build_class = this.getBuildClass(buildId, orgCode);
+      //设备id
+      //var deviceId = "33512";
+      var deviceId = data['deviceId'];
+      //当前组织机构
+      //var unitId = "AHHF_QHHFY_20180408";
+      var unitId = this.$store.state.shUnitId;
+      //加载设备基本信息
+      that.deviceInfo(deviceId, unitId);
+
+      //加载水压数据 echarts
+      if (deviceTypeId == fireMonitorTypeCode || deviceTypeId == insideTypeCode || deviceTypeId == outsideTypeCode /*|| deviceTypeId == firePool || deviceTypeId == fireWaterTank*/ ||
+        deviceTypeId == sprayEndCode || deviceTypeId == waterLevelCode) {
+        //加载电流 线缆温度echarts
+       // that.devicemA(deviceId, unitId, deviceTypeId, "7", build_class, data['runState']);
+      }
+
+      if (deviceTypeId == fireMonitorTypeCode) {
+        that.deviceCur(deviceId, unitId);
+      }
+
+      //出去三种特殊设备    其他设备展示 正常 报警  故障
+      if (deviceTypeId != insideTypeCode && deviceTypeId != outsideTypeCode /* &&  deviceTypeId != firePool && deviceTypeId != fireWaterTank*/ &&
+        deviceTypeId != sprayEndCode && deviceTypeId != waterLevelCode) {
+        if (data['runState'] == "0") { //正常
+          if (deviceTypeId == fireDoor) {
+            $("#currentState").html("关闭");
+          } else {
+            $("#currentState").html("正常");
+          }
+
+        } else if (data['runState'] == "1") { //报警
+          if (deviceTypeId != fireDoor) {
+            $("#currentState").html("报警");
+            $("#currentState").parent().removeClass("gg-normal-item").addClass("gg-alarm-item");
+          }
+        } else if (data['runState'] == "2") { //故障
+          $("#currentState").html("故障");
+          $("#currentState").parent().removeClass("gg-normal-item").addClass("gg-prober-item");
+        } else if (data['runState'] == "3") {
+          if (deviceTypeId == fireDoor) {
+            $("#currentState").html("开启");
+          }
+        } else if (data['runState'] == "98") {
+          $("#currentState").html("预警");
+          $("#currentState").parent().removeClass("gg-normal-item").addClass("gg-warning-item");
+        }
+      }
+
+      //电器火灾探测器弹窗面板 选项卡点击事件
+      var prober_btn = $('.gg-prober-content .gg-btn-capsule');
+      var prober_unit = $('.gg-prober-model .gg-prober-unit');
+      var capuse_time = $(".gg-capuse-time--item");
+      prober_unit.eq(0).show();
+      if (deviceTypeId == fireMonitorTypeCode) {
+        if ($(this).index() == 1) {
+          $(".gg-capuse-time").show();
+        } else {
+          $(".gg-capuse-time").hide();
+        }
+
+      }
+      var that = this;
+      prober_btn.click(function () {
+        prober_btn.removeClass('is-active');
+        prober_unit.removeClass('is-active');
+        $(this).addClass('is-active');
+
+        if ($(this).attr("name") == "accidRecord") {
+          //加载异常记录列表  查询前四条 传递0
+          that.deviceAccidentInfo(deviceId, unitId);
+        }
+        prober_unit.hide();
+        prober_unit.eq($(this).index()).show();
+
+        //sheshi
+        if (deviceTypeId == fireMonitorTypeCode) {
+          if ($(this).index() == 1) {
+            $(".gg-capuse-time").show();
+          } else {
+            $(".gg-capuse-time").hide();
+          }
+
+        } else if (deviceTypeId == insideTypeCode || deviceTypeId == outsideTypeCode || deviceTypeId ==
+          sprayEndCode) {
+          if ($(this).index() == 0) {
+            $(".gg-capuse-time").show();
+          } else {
+            $(".gg-capuse-time").hide();
+          }
+        } else if ( /* deviceTypeId == firePool || deviceTypeId == fireWaterTank ||*/ deviceTypeId ==
+          waterLevelCode) {
+          if ($(this).index() == 0) {
+            $(".gg-capuse-time").show();
+          } else {
+            $(".gg-capuse-time").hide();
+          }
+        } else if (deviceTypeId == smokeMonitor) {
+          if ($(this).index() == 0) {
+            $(".gg-capuse-time").show();
+          } else {
+            $(".gg-capuse-time").hide();
+          }
+        }
+
+
+      });
+
+      //电流与温度
+      var gg_ele_btn = $('.gg-ele-btn');
+      var gg_tem_btn = $('.gg-tem-btn');
+      $('.gg-chart-tem').hide();
+      gg_ele_btn.click(function () {
+        this.style.color = '#3c8dbc';
+        this.style.borderBottom = '2px solid #3c8dbc';
+        gg_tem_btn[0].style.color = '#a5a5a5';
+        gg_tem_btn[0].style.borderBottom = '0';
+        $('.gg-chart-tem').hide();
+        $('.gg-chart-ele').show();
+      });
+      gg_tem_btn.click(function () {
+        this.style.color = '#3c8dbc';
+        this.style.borderBottom = '2px solid #3c8dbc';
+        gg_ele_btn[0].style.color = '#a5a5a5';
+        gg_ele_btn[0].style.borderBottom = '0';
+        $('.gg-chart-ele').hide();
+        $('.gg-chart-tem').show();
+      });
+
+
+      capuse_time.click(function () {
+        capuse_time.removeClass("is-active");
+        $(this).addClass("is-active");
+
+        //查询24小时内 还是 一周内的
+        var value = $(this).attr("id");
+        //加载设备基本信息
+
+        that.deviceInfo(deviceId, unitId);
+        //加载异常记录列表  查询前四条 传递0  传递1时查询最近一条 作为实时数据
+        //deviceAccidentInfo(deviceId,unitId,value);
+        //加载电流 线缆温度echarts
+        that.devicemA(deviceId, unitId, deviceTypeId, value, build_class, data['runState']);
+
+      });
+    },
+    deviceCur: function (deviceId, unitId) {
+      $.ajax({
+        url: api.forent_url.monitor_url + '/monitor/getMeasurement',
+        type: 'get',
+        //async: false,
+        data: {
+          deviceId: deviceId,
+          unitId: unitId,
+        },
+        success: function (res) {
+          if (res.code) {
+            var data = res.data.json;
+            var threshold = "";
+            if (data != null && data != "") {
+              var html = "";
+              data = JSON.parse(data);
+              data.forEach(function (value, index, array) {
+                if (value != null) {
+                  var flagName = value.flagName; //名称
+                  var measurement = value.measurement; //实时值
+                  var unit = value.unit; //单位
+                  var flag = value.flag; //标识
+                  /*     if(unit=="mA" || unit=="A" ){
+                           threshold = ">300mA";
+                       }else if(unit=="℃"){
+                           threshold = ">45℃";
+                       }else{
+                           threshold = "--";
+                       }*/
+                  html += "<tr><td style='width: 50%'>" + flagName + "</td><td style='width: 50%'>" +
+                    measurement + unit + "</td></tr>";
+                }
+              });
+              $("#curData").html(html);
+            }
+          }
+        }
+      });
+    },
+    /**
+     * 查询设备的基本信息
+     *
+     * @param deviceId
+     * @param unitId
+     */
+    deviceInfo: function (deviceId, unitId) {
+
+      var data = null, that = this;
+      var fireDoor = special_device_type.fireDoor; //防火门
+      // const loading = this.$loading({
+      //   lock: true,
+      //   text: 'Loading',
+      //   // fullscreen:true,
+      //   target: document.getElementById('pin'),
+      //   background: 'rgba(255,255,255, 0.7)'
+      // });
+      
+      $.ajax({
+        // url: forent_url.monitor_url + '/monitor/getUnitTAndA',
+        //http://localhost:8082/monitor/getMoniterDevice?unitId=AHHF_QHHFY_20180408&deviceId=33338
+        //url: api.forent_url.monitor_url + '/monitor/getMoniterDevice',
+        url:'/remoteApi/tool/deviceInfo/getMoniterDevice',
+        type: 'get',
+        //async: false,
+        data: {
+          unitId: unitId,
+          deviceId: deviceId
+        },
+        success: function (res) {
+          data = res.data;
+
+
+          if (data != null) {
+            var brand = data.brand == null ? "" : data.brand; //品牌
+            var model = data.model == null ? "" : data.model; //型号
+            var vender = (data.vender == null || data.vender == "null") ? "" : data.vender; //厂商
+            var deviceTypeName = data.deviceTypeName == null ? "" : data.deviceTypeName;
+            var deviceId = data.deviceId == null ? "" : data.deviceId;
+            var buildName = data.buildName == null ? "" : data.buildName; //楼栋名称
+            var floorName = data.floorName == null ? "" : data.floorName; //楼层名称
+            var deviceAddress = data.deviceAddress == null ? "" : data.deviceAddress; //具体地址
+            var laLoop = data.laLoop == null ? "" : data.laLoop; //回路
+            var laPoint = data.laPoint == null ? "" : data.laPoint; //点位
+            //var manufactureDate = data.manufactureDate==null?"":data.manufactureDate;//生产日期
+            var controlHost = data.controlHost == null ? "" : data.controlHost; //ID/SN/序列号
+            var cardNo = data.cardno == null ? "" : data.cardno; //nb卡号
+            var module = data.module == null ? "" : data.module; //模组
+            var installDate = data.installDate == null ? "" : data.installDate; //安装日期
+            var onlineState = data.onlineState == null ? "" : data.onlineState == "" ? "" : data.onlineState ==
+              "1" ? "在线" : "离线"; //设备是否在线 1 在线 0  离线
+            var deviceTypeId = data.deviceTypeId; //设备类型id
+
+            $("#deviceId").html(deviceId);
+            $("#deviceBrand").html(brand + model);
+            $("#deviceTypeName").html(deviceTypeName + deviceId);
+            $("#deviceInfo").html(vender + brand + model);
+            $("#controlHost").html(controlHost);
+            $("#deviceTitle").html(deviceTypeName);
+            $("#deviceModule").html(module);
+            $("#deviceNB").html(cardNo);
+            $("#installDate").html(installDate);
+
+            var title1 = buildName + floorName + deviceAddress;
+            $("#deviceTitle1").html(title1);
+
+            if (deviceTypeId == "19010000" || deviceTypeId == "19020000" || deviceTypeId == "19030000" ||
+              deviceTypeId == "19210000" || deviceTypeId == "19080000" || deviceTypeId == "19150000" ||
+              deviceTypeId == fireDoor) {
+              if (onlineState == "离线") {
+                $("#onlineState").parent().removeClass("gg-online-item").addClass("gg-outline-item")
+              }
+              $("#onlineState").html(onlineState); //设备在线状态
+            }
+            $("#loop").html((laLoop == null ? "" : laLoop) + '-' + (laPoint == null ? "" : laPoint));
+          }
+          that.$nextTick(() => {
+           // loading.close();
+          })
+
+        }
+      });
+    },
+    /**
+     * 加载线缆温度数据 echarts 图
+     * @param deviceId
+     * @param unitId
+     * @param flag
+     */
+    devicemA: function (deviceId, unitId, deviceTypeId, value, build_class, runState) {
+      //先查询 当前设备 最新的报警 或者隐患 获取时间 用于查询 异常记录（监测中心数据量大，用时间限制查询范围）
+      var data = null,
+        that = this;
+      $.ajax({
+        // url: forent_url.monitor_url + '/monitor/getUnitTAndA',
+        //http://localhost:8082/monitor/getMoniterDevice?unitId=AHHF_QHHFY_20180408&deviceId=33338
+        url: api.forent_url.monitor_url + '/monitor/getMonitorNotesByTime',
+        type: 'get',
+        // async: false,
+        data: {
+          unitId: unitId,
+          deviceId: deviceId,
+          flag: value
+        },
+        success: function (res) {
+          data = res.data;
+          //当前剩余电流
+          // var currentmA = 0;
+          //d当前线缆温度
+          // var currentTem = 0;
+          //当前水压
+          var currentMpa = 0;
+
+          var currentM = 0; //当前水位
+
+          var currentV = ""; //电池电压
+          if (data != null) {
+
+            if (data.yValue != null && data.yValue.length > 0) {
+              currentMpa = data.yValue[data.yValue.length - 1];
+            }
+            if (data.batteryValue != null && data.batteryValue.length > 0) {
+              currentV = data.batteryValue[data.batteryValue.length - 1];
+            }
+            if (data.waterLevelValue != null && data.waterLevelValue.length > 0) {
+              currentM = data.waterLevelValue[data.waterLevelValue.length - 1];
+            }
+
+          }
+          if (deviceTypeId == outsideTypeCode || deviceTypeId == insideTypeCode || deviceTypeId ==
+            sprayEndCode) {
+            if (runState == "0") { //正常
+
+            } else if (runState == "1") { //报警
+              $("#currentMpa").parent().removeClass("gg-normal-item").addClass("gg-alarm-item");
+            } else if (runState == "2") { //故障
+              $("#currentMpa").parent().removeClass("gg-normal-item").addClass("gg-prober-item");
+            }
+          }
+
+          if (deviceTypeId == waterLevelCode) {
+            if (runState == "0") { //正常
+
+            } else if (runState == "1") { //报警
+              $("#currentM").parent().removeClass("gg-normal-item").addClass("gg-alarm-item");
+            } else if (runState == "2") { //故障
+              $("#currentM").parent().removeClass("gg-normal-item").addClass("gg-prober-item");
+            }
+          }
+
+          //室外水压加测装备
+          /*  if (deviceTypeId == outsideTypeCode) {
+                //室外设备 水压小于0.1时异常
+                if (currentMpa < 0.1) {
+                    $("#currentMpa").parent().removeClass("gg-normal-item").addClass("gg-prober-item");
+                }
+            }
+            //室内水压监测装备
+            //楼栋的类型  01	超高层建筑02	一类高层建筑03	二类高层建筑04	高层厂房05	高层库房06	低层民用建筑07	低层厂房08	低层库房09	地下建筑99	其他建筑
+            if (deviceTypeId == insideTypeCode) {
+                //室外设备 水压小于0.1时异常
+                if (build_class == "02") {//一类高层
+                    if (parseFloat(currentMpa) < parseFloat(0.1)) {
+                        $("#currentMpa").parent().removeClass("gg-normal-item").addClass("gg-prober-item");
+                    }
+                } else if (build_class == "01") {//超高层
+                    if (parseFloat(currentMpa) < parseFloat(0.15)) {
+                        $("#currentMpa").parent().removeClass("gg-normal-item").addClass("gg-prober-item");
+                    }
+                } else {//其他装备
+                    if (parseFloat(currentMpa) < parseFloat(0.07)) {
+                        $("#currentMpa").parent().removeClass("gg-normal-item").addClass("gg-prober-item");
+                    }
+                }
+            }
+
+            //喷淋末端
+            if(deviceTypeId==sprayEndCode){
+                if (parseFloat(currentMpa) < parseFloat(0.05)) {
+                    $("#currentMpa").parent().removeClass("gg-normal-item").addClass("gg-prober-item");
+                }
+            }*/
+
+          //当前的电流 温度  水压值回显
+
+          $("#currentMpa").html(currentMpa == null ? 0 : currentMpa);
+          //$("#currentMa").html(currentmA == null ? 0 : currentmA);
+          // $("#currentTem").html(currentTem == null ? 0 : currentTem);
+          $("#powersupplyVoltage").html(currentV == null ? "" : currentV);
+          $("#currentM").html(currentM == null ? "" : currentM);
+
+          // data.xValue=[0,2,4,6,8,10,12,14,16,18,20,22];
+          // data.yaValue=[2,4,6,8,10,12,14,16,18,20,22,1];
+          // data.ybValue=[22,20,18,16,14,12,10,8,6,4,2,0];
+          // data.ycValue=[1,3,4,2,6,4,12,18,3,1,2,8];
+          // data.ydValue=[5,8,4,2,8,4,12,8,3,12,2,8];
+          var zheXianContent = {
+            "containerId": "deviceTem",
+            "option": {
+              title: {
+                text: ''
+              },
+              tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                  type: 'cross',
+                  label: {
+                    backgroundColor: '#6a7985'
+                  }
+                }
+              },
+              legend: {
+                data: ['A相点温度', 'B相电温度', 'C相电温度', 'N相电温度']
+              },
+              toolbox: {
+                /* feature: {
+                     saveAsImage: {}
+                 }*/
+              },
+              grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+              },
+              xAxis: [{
+                type: 'category',
+                boundaryGap: false,
+                data: data.xValue
+              }],
+              yAxis: [{
+                type: 'value',
+                axisLine: {
+                  show: false,
+                },
+                axisTick: {
+                  show: false
+                }
+              }],
+              series: [{
+                name: 'A相电',
+                type: 'line',
+                smooth: true,
+                areaStyle: {
+                  normal: {
+                    width: 1
+                  }
+                },
+                data: data.yaValue
+              },
+              {
+                name: 'B相电',
+                type: 'line',
+                smooth: true,
+                areaStyle: {
+                  normal: {
+                    width: 1
+                  }
+                },
+                data: data.ybValue
+              },
+              {
+                name: 'C相电',
+                type: 'line',
+                smooth: true,
+                areaStyle: {
+                  normal: {
+                    width: 1
+                  }
+                },
+                data: data.ycValue
+              },
+              {
+                name: 'N相电',
+                type: 'line',
+                smooth: true,
+                areaStyle: {
+                  normal: {
+                    width: 1
+                  }
+                },
+                data: data.ydValue
+              },
+
+              ]
+            },
+
+          };
+          // data.xValue=[0,2,4,6,8,10,12,14,16,18,20,22];
+          // data.ymaValue=[5,8,4,2,8,4,12,8,3,12,2,8];
+          var mAContent = {
+            "containerId": "deviceMa",
+            "option": {
+              title: {
+                text: ''
+              },
+              tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                  type: 'cross',
+                  label: {
+                    backgroundColor: '#6a7985'
+                  }
+                }
+              },
+              legend: {
+                data: ['剩余电流']
+              },
+              toolbox: {
+                /*feature: {
+                    saveAsImage: {}
+                }*/
+              },
+              grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+              },
+              xAxis: [{
+                type: 'category',
+                boundaryGap: false,
+                data: data.xValue
+              }],
+              yAxis: [{
+                type: 'value',
+                axisLine: {
+                  show: false,
+                },
+                axisTick: {
+                  show: false
+                }
+              }],
+              series: [{
+                name: 'A相电',
+                type: 'line',
+                areaStyle: {
+                  normal: {}
+                },
+                data: data.ymaValue,
+                smooth: true,
+                itemStyle: {
+                  normal: {
+                    color: '#a8f8fd',
+                  }
+                },
+                areaStyle: {
+                  normal: {
+                    color: '#add8f7'
+                  }
+                },
+                lineStyle: {
+                  normal: {
+                    color: '#4baaee',
+                    width: 1
+                  }
+                },
+              }]
+            },
+
+          };
+          // data.xValue=[0,2,4,6,8,10,12,14,16,18,20,22];
+          // data.yValue=[2,4,6,8,10,7,0,0,0,0,0,0];
+          var mpaContent = {
+            "containerId": "deviceWater",
+            "option": {
+              title: {
+                text: ''
+              },
+              color: ['#add8f7'],
+              tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                  type: 'cross',
+                  label: {
+                    backgroundColor: '#6a7985'
+                  }
+                }
+              },
+              legend: {
+                data: ['水压']
+              },
+              grid: {
+                top: '20%',
+                left: '8%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+              },
+              xAxis: [{ //name:'时/天',
+                nameLocation: 'middle',
+                type: 'category',
+                boundaryGap: false,
+                data: data.xValue,
+                axisTick: {
+                  show: false
+                },
+                axisLine: {
+                  show: false,
+                },
+                // axisLabel:{
+                //     formatter:function(v){
+                //         return v+'时'
+                //     }
+                // }
+              }],
+              yAxis: [{
+                name: ' 单位/Mpa',
+                nameLocation: 'end',
+                type: 'value',
+                axisTick: {
+                  show: false
+                },
+                axisLine: {
+                  show: false,
+                },
+                // axisLabel:{
+                //     formatter:'{value}Mpa'
+                // }
+              }],
+              series: [{
+                name: '水压',
+                type: 'line',
+                areaStyle: {
+                  normal: {}
+                },
+                data: data.yValue,
+                smooth: true,
+                lineStyle: {
+                  normal: {
+                    color: '#4baaee',
+                    width: 1
+                  }
+                },
+              }]
+            },
+
+          };
+          // data.xValue=[0,2,4,6,8,10,12,14,16,18,20,22];
+          // data.waterLevelValue=[5,8,4,2,8,4,12,8,3,12,2,8];
+          var waterLevelContent = {
+            "containerId": "deviceWaterLevel",
+            "option": {
+              title: {
+                text: ''
+              },
+              color: ['#4baaee'],
+              tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                  type: 'cross',
+                  label: {
+                    backgroundColor: 'black'
+                  }
+                }
+              },
+              legend: {
+                data: ['水位']
+              },
+              grid: {
+                left: '8%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+              },
+              xAxis: [{
+                type: 'category',
+                boundaryGap: false,
+                data: data.xValue,
+                axisLine: {
+                  show: false,
+                },
+              }],
+              yAxis: [{
+                name: ' 单位/m',
+                type: 'value',
+                axisLine: {
+                  show: false,
+                },
+              }],
+              // series: [
+              //     {
+              //         name: '水位',
+              //         smooth:true,
+              //         type: 'line',
+              //         itemStyle:{normal: {color:'#a8f8fd'}},
+              //         areaStyle: {normal: {color:'#a8f8fd'}},
+              //         lineStyle:{normal: {color:'#38f9f9'}},
+              //         data: data.waterLevelValue
+              //     }
+              // ]
+              series: [{
+                name: '水位',
+                smooth: true,
+                type: 'line',
+                itemStyle: {
+                  normal: {
+                    color: '#a8f8fd'
+                  }
+                },
+                areaStyle: {
+                  normal: {
+                    color: '#add8f7'
+                  }
+                },
+                lineStyle: {
+                  normal: {
+                    color: '#4baaee',
+                    width: 1
+                  }
+                },
+                data: data.waterLevelValue
+              }]
+            },
+
+          };
+
+          if (deviceTypeId == fireMonitorTypeCode) {
+            //设备类型 电气火灾监控装置 显示电流曲线 电温曲线
+            that.zheXianContentChart = that.$echarts.init(document.getElementById(zheXianContent.containerId))
+            that.zheXianContentChart.setOption(zheXianContent.option);
+            that.mAContentChart = that.$echarts.init(document.getElementById(mAContent.containerId))
+            that.mAContentChart.setOption(mAContent.option);
+            /* GS.gs_echart.create(zheXianContent);
+            GS.gs_echart.create(mAContent);
+            var zhexian_echart = GS.gs_echart.create(zheXianContent);
+            var mAContent_echart = GS.gs_echart.create(mAContent); */
+          } else if (deviceTypeId == insideTypeCode || deviceTypeId == outsideTypeCode || deviceTypeId ==
+            sprayEndCode) {
+            //设备类型 室内水压监测装置  室外水压加测装置 显示水压曲线
+            /* GS.gs_echart.create(mpaContent);
+            var mpaContent_echart = GS.gs_echart.create(mpaContent); */
+            that.mpaContentChart = that.$echarts.init(document.getElementById(mpaContent.containerId))
+            that.mpaContentChart.setOption(mpaContent.option);
+          } else if ( /*deviceTypeId == firePool || deviceTypeId == fireWaterTank ||*/ deviceTypeId ==
+            waterLevelCode) {
+            // GS.gs_echart.create(waterLevelContent);
+            // var waterLevelContent = GS.gs_echart.create(waterLevelContent);
+            that.waterLevelChart = that.$echarts.init(document.getElementById(waterLevel.containerId))
+            that.waterLevelChart.setOption(waterLevel.option);
+          }
+          $(window).resize(function () {
+            if (deviceTypeId == fireMonitorTypeCode) {
+              that.zheXianContentChart.resize();
+              that.mAContentChart.resize();
+            } else if (deviceTypeId == insideTypeCode || deviceTypeId == outsideTypeCode || deviceTypeId ==
+              sprayEndCode) {
+              that.mpaContentChart.resize();
+            } else if ( /*deviceTypeId == firePool || deviceTypeId == fireWaterTank ||*/ deviceTypeId ==
+              waterLevelCode) {
+              that.waterLevelChart.resize();
+            }
+          })
+        }
+      });
+    },
+    /**
+     * 设备的故障列表
+     * @param deviceId
+     * @param unitId
+     * @param flag
+     */
+    deviceAccidentInfo: function (deviceId, unitId) {
+      var receivedate = "";
+      $.ajax({
+        // url: forent_url.monitor_url + '/monitor/getUnitTAndA',
+        //http://localhost:8082/monitor/getMoniterDevice?unitId=AHHF_QHHFY_20180408&deviceId=33338
+        url: api.forent_url.base_url + '/accidentInfo/getAlarmAccidentTime',
+        type: 'post',
+        async: true,
+        data: {
+          deviceId: deviceId,
+          unitId: unitId
+        },
+        success: function (res) {
+          receivedate = res.data;
+          if (receivedate != null && receivedate != "") {
+            var data = null;
+            $.ajax({
+              // url: forent_url.monitor_url + '/monitor/getUnitTAndA',
+              //http://localhost:8082/monitor/getMoniterDevice?unitId=AHHF_QHHFY_20180408&deviceId=33338
+              url: api.forent_url.monitor_url + '/monitor/getMonitorNotes',
+              type: 'get',
+              // async: false,
+              data: {
+                unitId: unitId,
+                deviceId: deviceId,
+                date: receivedate
+              },
+              success: function (res) {
+                data = res.data;
+                if (data != null) {
+                  var html = "";
+                  if (data != null && data.length > 0) {
+                    var describe = "";
+                    for (var i = 0; i < data.length; i++) {
+                      describe = data[i].faultDescribe;
+                      describe = describe.length > 10 ? describe.substring(0, 10) + "..." : describe;
+
+                      html += "<li><a class=\"gg-probe-list--item\" title='" + data[i].faultDescribe +
+                        "'><span class=\"gg-probe-list--num\">" + (i + 1) + "</span>" + describe +
+                        "</a>" +
+                        "<a class=\"gg-probe-list--item\"><span class=\"gg-probe-list--time\">" + data[
+                          i].createTime + "<span class=\"gg-margin-l-20\"></span></span></a></li>";
+                    }
+                  } else {
+                    html += "暂无数据";
+                  }
+                  $("#deviceAccident").html(html);
+                }
+
+              }
+            });
+          } else {
+            $("#deviceAccident").html("暂无数据");
+          }
+
+        }
+      })
+
+
+
+
+    },
+    /**
+     *其他设备
+     */
+    fireOther: function () {
+      var tooltipTemplate = '<div class="floor-main-wrap gg-prtrol-pos">\n' +
+        '                <div class="gg-structure">\n' +
+        '                        <!--电气火灾探测器 面板-->\n';
+      tooltipTemplate +=
+        '                        <div class="gg-warnNum-dialog gg-prober-pos gg-warnNum-short-dialog">\n';
+
+
+      tooltipTemplate += '                            <div class="gg-prober-header clearfix">\n' +
+        '                                <div class="gg-prober-header--info">\n' +
+        '                                    <span class="gg-prober-h5" id="deviceTitle"></span><a class="gg-online-item"><span id="onlineState"></span></a>\n' +
+        '                                    <a class="gg-prober-location"><span id="deviceTitle1" title=""></span></a>\n' +
+        '                                </div>';
+      //设备类型电气火灾监控装置 显示 实时电流电温
+
+      tooltipTemplate += ' <div class="gg-prober-group">\n' +
+        '                                    <a class="gg-normal-item"><span id="currentState">正常</span></a>\n' +
+        '                                </div>';
+      tooltipTemplate += '</div>\n' +
+        '                            <div class="gg-prober-body">\n' +
+        '                                <div class="gg-prober-content">\n' +
+        '                                    <div class="gg-switch-content">\n' +
+        '                                        <div class="gg-btn-capsuleGroup gg-btn-capsuleInline gg-prober-capsule">';
+
+      tooltipTemplate += '<a class="gg-btn-capsule is-active" name="info">设施信息</a>\n' +
+        '                                            <a class="gg-btn-capsule" name="accidRecord">异常记录</a>\n' +
+        '                                        </div>';
+      tooltipTemplate += '                                    </div>\n' +
+        '                                    <div class="gg-prober-model">';
+
+      tooltipTemplate += '                                        <div class="gg-prober-unit ">\n' +
+        '                                            <!--设施信息 列表-->\n' +
+        '                                            <div class="gg-prober-device-list">';
+      tooltipTemplate += '                                                <div class="gg-prober-device">\n' +
+        '                                                    <span class="gg-probe-cell">回路点位：</span>\n' +
+        '                                                    <span class="gg-probe-cell">\n' +
+        '                                                        <a class="gg-probe-unit-item" id="loop"></a>\n' +
+        '                                                    </span>\n' +
+        '                                                </div>\n' +
+        // '                                                <div class="gg-prober-device">\n' +
+        // '                                                </div>
+        '                                                <div class="gg-prober-device">\n' +
+        '                                                    <span class="gg-probe-cell" >设备ID：</span>\n' +
+        '                                                    <span class="gg-probe-cell" id="deviceId"></span>\n' +
+        '                                                </div>';
+      /* }*/
+      tooltipTemplate += '                                                <div class="gg-prober-device">\n' +
+        '                                                    <span class="gg-probe-cell" >设施品牌：</span>\n' +
+        '                                                    <span class="gg-probe-cell" >\n' +
+        '                                                       <a class="gg-probe-unit-item" id="deviceBrand"></a>\n' +
+        '                                               </span>\n' +
+        '                                                </div>';
+      tooltipTemplate += '</div>' +
+        '</div>';
+      tooltipTemplate += '                                        <div class="gg-prober-unit">\n' +
+        '                                            <!--异常记录 列表-->\n' +
+        '                                            <ul class="gg-probe-list" id="deviceAccident">\n' +
+        '                                            </ul>\n' +
+        '                                        </div>';
+
+      tooltipTemplate += '                              </div>\n' +
+        '                                </div>\n' +
+        '                            </div>\n' +
+        '                        </div>\n' +
+        '                </div>\n' +
+        '            </div>';
+      return tooltipTemplate;
+    },
+    /**
+     * 拼接电器火灾的弹窗html
+     */
+
+    fireHtml: function () {
+      var tooltipTemplate = '<div class="floor-main-wrap gg-prtrol-pos">\n' +
+        '                <div class="gg-structure">\n' +
+        '                        <!--电气火灾探测器 面板-->\n';
+      tooltipTemplate +=
+        '                        <div class="gg-warnNum-dialog gg-prober-pos gg-warnNum-long-dialog">\n';
+
+
+      tooltipTemplate += '                            <div class="gg-prober-header clearfix">\n' +
+        '                                <div class="gg-prober-header--info">\n' +
+        '                                    <h5 class="gg-prober-h5" id="deviceTitle"></h5>\n' +
+        '                                    <a class="gg-prober-location"><span id="deviceTitle1" title=""></span></a>\n' +
+        '                                </div>';
+      //设备类型电气火灾监控装置 显示 实时电流电温
+
+      tooltipTemplate += ' <div class="gg-prober-group">\n' +
+        '                                    <a class="gg-normal-item"><span id="currentState">正常</span></a>\n' +
+        '                                </div>';
+
+
+      tooltipTemplate += '</div>\n' +
+        '                            <div class="gg-prober-body">\n' +
+        '                                <div class="gg-prober-content">\n' +
+        '                                    <div class="gg-switch-content">\n' +
+        '                                        <div class="gg-btn-capsuleGroup gg-btn-capsuleInline gg-prober-capsule">';
+
+      //设备类型电气火灾监控装置 显示 实时电流电温曲线
+      tooltipTemplate += ' <a class="gg-btn-capsule is-active">实时读数</a>' +
+        '<a class="gg-btn-capsule " name="ma">监测曲线</a>';
+      tooltipTemplate += '<a class="gg-btn-capsule">设施信息</a>\n' +
+        '                                            <a class="gg-btn-capsule" name="accidRecord">异常记录</a>\n' +
+        '                                        </div>';
+      tooltipTemplate +=
+        '                                        <div class="gg-capuse-time" style="position: absolute;\n' +
+        '    right: 13px;margin-top:15px;z-index:10" >\n' +
+        '                                            <a class="gg-capuse-time--item is-active" id="7">近一周</a>\n' +
+        '                                            <a class="gg-capuse-time--item"  id="24">24小时</a>\n' +
+        '                                        </div>';
+
+      tooltipTemplate += '                                    </div>\n' +
+        '                                    <div class="gg-prober-model">';
+      //设备类型电气火灾监控装置 显示 实时电流电温曲线
+      tooltipTemplate +=
+        '<div class="gg-prober-unit is-active"><div class="gg-prober-unit__table "><table><thead>\n' +
+        '                                            <th width="50%">对象</th>\n' +
+        '                                            <th width="50%">实时值</th>\n' +
+        /* '                                            <th>报警阈值</th>\n' +*/
+        '                                        </thead></table></div> <div class="gg-scroll-tbody scroll-normal"><table><tbody id="curData"> </tbody></table></div> </div>'
+      tooltipTemplate += '<div class="gg-prober-unit"><div class="gg-probe-chart">' +
+        '                                   <div class="gg-probe-chart__btn">\n' +
+        '                                            <a class="gg-ele-btn" style="color:#3c8dbc;border-bottom:2px solid #3c8dbc;">剩余电流</a>\n' +
+        '                                            <a class="gg-tem-btn">线缆温度</a>\n' +
+        '                                        </div>\n' +
+        '                                            <!--剩余电流 折线图-->\n' +
+        '                                            <div class="gg-chart-ele"   id="deviceMa"> </div>\n' +
+        '                                            <div class="gg-chart-tem"  id="deviceTem"></div>' +
+        '</div></div>';
+
+      tooltipTemplate += '                                        <div class="gg-prober-unit ">\n' +
+        '                                            <!--设施信息 列表-->\n' +
+        '                                            <div class="gg-prober-device-list">';
+
+      tooltipTemplate += '                                                <div class="gg-prober-device">\n' +
+        '                                                    <span class="gg-probe-cell">回路点位：</span>\n' +
+        '                                                    <span class="gg-probe-cell">\n' +
+        '                                                        <a class="gg-probe-unit-item" id="loop"></a>\n' +
+        '                                                    </span>\n' +
+        '                                                </div>\n' +
+        '                                                <div class="gg-prober-device">\n' +
+        '                                                    <span class="gg-probe-cell" >设备ID：</span>\n' +
+        '                                                    <span class="gg-probe-cell" id="deviceId"></span>\n' +
+        '                                                </div>';
+      /* }*/
+      tooltipTemplate += '                                                <div class="gg-prober-device">\n' +
+        '                                                    <span class="gg-probe-cell" >设施品牌：</span>\n' +
+        '                                                    <span class="gg-probe-cell" >\n' +
+        '                                                       <a class="gg-probe-unit-item" id="deviceBrand"></a>\n' +
+        '                                               </span>\n' +
+        '                                                </div>';
+
+      tooltipTemplate += '                                                <div class="gg-prober-device">\n' +
+        '                                                    <span class="gg-probe-cell">监测装置：</span>\n' +
+        '                                                    <span class="gg-probe-cell">\n' +
+        '                                                        <a class="gg-probe-unit-item" id="deviceTypeName">设施类型+设施编码</a>\n' +
+        '                                                        <a class="gg-probe-unit-item" id="deviceInfo">厂家+品牌+规格型号</a>\n' +
+        '                                                    </span>\n' +
+        '                                                </div>\n' +
+        '                                                <div class="gg-prober-device">\n' +
+        '                                                    <span class="gg-probe-cell" >ID/SN/序列号：</span>\n' +
+        '                                                    <span class="gg-probe-cell" id="controlHost"></span>\n' +
+        '                                                </div>';
+      tooltipTemplate += '</div>' +
+        '</div>';
+      tooltipTemplate += '                                        <div class="gg-prober-unit">\n' +
+        '                                            <!--异常记录 列表-->\n' +
+        '                                            <ul class="gg-probe-list" id="deviceAccident">\n' +
+        '                                            </ul>\n' +
+        '                                        </div>';
+
+      tooltipTemplate += '                              </div>\n' +
+        '                                </div>\n' +
+        '                            </div>\n' +
+        '                        </div>\n' +
+        '                </div>\n' +
+        '            </div>';
+
+      return tooltipTemplate;
+    },
+    /**
+     * 室内室外消防水涯监测装置 html
+     *
+     */
+    firewater: function () {
+      var tooltipTemplate = '<div class="floor-main-wrap gg-prtrol-pos">\n' +
+        '                <div class="gg-structure">\n' +
+        '                        <!--电气火灾探测器 面板-->\n';
+      tooltipTemplate +=
+        '                        <div class="gg-warnNum-dialog gg-prober-pos gg-warnNum-long-dialog">\n';
+
+
+      tooltipTemplate += '                            <div class="gg-prober-header clearfix">\n' +
+        '                                <div class="gg-prober-header--info">\n' +
+        '                                    <span class="gg-prober-h5" id="deviceTitle"></span><a class="gg-online-item"><span id="onlineState"></span></a>\n' +
+        '                                    <a class="gg-prober-location"><span id="deviceTitle1" title=""></span></a>\n' +
+        '                                </div>';
+      //设备类型电气火灾监控装置 显示 实时电流电温
+      //设备类型 室内水压监测装置  室外水压加测装置 显示实时水压
+      tooltipTemplate += ' <div class="gg-prober-group">\n' +
+        '                                    <a class="gg-normal-item"><span id="currentMpa"></span>Mpa</a>\n' +
+        '                                </div>';
+      tooltipTemplate += '</div>\n' +
+        '                            <div class="gg-prober-body">\n' +
+        '                                <div class="gg-prober-content">\n' +
+        '                                    <div class="gg-switch-content">\n' +
+        '                                        <div class="gg-btn-capsuleGroup gg-btn-capsuleInline gg-prober-capsule">';
+
+      //设备类型 室内水压监测装置  室外水压加测装置 显示水压曲线
+      tooltipTemplate += ' <a class="gg-btn-capsule is-active" name="mpa">水压曲线</a>';
+
+
+      tooltipTemplate += '<a class="gg-btn-capsule">设施信息</a>\n' +
+        '                                            <a class="gg-btn-capsule" name="accidRecord">异常记录</a>\n' +
+        '                                        </div>';
+      tooltipTemplate += '                                        <div class="gg-capuse-time" >\n' +
+        '                                            <a class="gg-capuse-time--item is-active" id="7">近一周</a>\n' +
+        '                                            <a class="gg-capuse-time--item"  id="24">24小时</a>\n' +
+
+        '                                        </div>';
+      tooltipTemplate += '                                    </div>\n' +
+        '                                    <div class="gg-prober-model">';
+
+      //设备类型 室内水压监测装置  室外水压加测装置 显示水压曲线
+      tooltipTemplate += '<div class="gg-prober-unit" is-active >\n' +
+        '                                            <!--水压 折线图-->\n' +
+        '                                            <div class="gg-probe-chart" id="deviceWater">\n' +
+        '                                            </div>\n' +
+        '                                        </div>'
+
+      tooltipTemplate += '                                        <div class="gg-prober-unit ">\n' +
+        '                                            <!--设施信息 列表-->\n' +
+        '                                            <div class="gg-prober-device-list">';
+      tooltipTemplate += '                                                <div class="gg-prober-device">\n' +
+        '                                                    <span class="gg-probe-cell">回路点位：</span>\n' +
+        '                                                    <span class="gg-probe-cell">\n' +
+        '                                                        <a class="gg-probe-unit-item" id="loop"></a>\n' +
+        '                                                    </span>\n' +
+        '                                                </div>\n' +
+        // '                                                <div class="gg-prober-device">\n' +
+        // '                                                </div>
+        '                                                <div class="gg-prober-device">\n' +
+        '                                                    <span class="gg-probe-cell" >设备ID：</span>\n' +
+        '                                                    <span class="gg-probe-cell" id="deviceId"></span>\n' +
+        '                                                </div>';
+      /* }*/
+      tooltipTemplate += '                                                <div class="gg-prober-device">\n' +
+        '                                                    <span class="gg-probe-cell" >设施品牌：</span>\n' +
+        '                                                    <span class="gg-probe-cell" >\n' +
+        '                                                       <a class="gg-probe-unit-item" id="deviceBrand"></a>\n' +
+        '                                               </span>\n' +
+        '                                                </div>';
+
+      tooltipTemplate += '                                                <div class="gg-prober-device">\n' +
+        '                                                    <span class="gg-probe-cell">监测装置：</span>\n' +
+        '                                                    <span class="gg-probe-cell">\n' +
+        '                                                        <a class="gg-probe-unit-item" id="deviceTypeName">设施类型+设施编码</a>\n' +
+        '                                                        <a class="gg-probe-unit-item" id="deviceInfo">厂家+品牌+规格型号</a>\n' +
+        '                                                    </span>\n' +
+        '                                                </div>\n' +
+        '                                                <div class="gg-prober-device">\n' +
+        '                                                    <span class="gg-probe-cell" >ID/SN/序列号：</span>\n' +
+        '                                                    <span class="gg-probe-cell" id="controlHost"></span>\n' +
+        '                                                </div>';
+      tooltipTemplate += '<div class="gg-prober-device">\n' +
+        '                                                    <span class="gg-probe-cell" >电池电压：</span>\n' +
+        '                                                    <span class="gg-probe-cell" id="powersupplyVoltage"></span>V\n' +
+        '                                                </div>'
+
+
+      tooltipTemplate += '</div>' +
+        '</div>';
+      tooltipTemplate += '                                        <div class="gg-prober-unit">\n' +
+        '                                            <!--异常记录 列表-->\n' +
+        '                                            <ul class="gg-probe-list" id="deviceAccident">\n' +
+        '                                            </ul>\n' +
+        '                                        </div>';
+
+      tooltipTemplate += '                              </div>\n' +
+        '                                </div>\n' +
+        '                            </div>\n' +
+        '                        </div>\n' +
+        '                </div>\n' +
+        '            </div>';
+      return tooltipTemplate;
+    },
+
+    /**
+     * 消防水池
+     */
+    fireWaterPool: function () {
+      var tooltipTemplate = '<div class="floor-main-wrap gg-prtrol-pos">\n' +
+        '                <div class="gg-structure">\n' +
+        '                        <!--电气火灾探测器 面板-->\n';
+      tooltipTemplate +=
+        '                        <div class="gg-warnNum-dialog gg-prober-pos gg-warnNum-long-dialog">\n';
+      tooltipTemplate += '                            <div class="gg-prober-header clearfix">\n' +
+        '                                <div class="gg-prober-header--info">\n' +
+        '                                    <h5 class="gg-prober-h5" id="deviceTitle"></h5>\n' +
+        '                                    <a class="gg-prober-location"><span id="deviceTitle1" title=""></span></a>\n' +
+        '                                </div>';
+      //设备类型电气火灾监控装置 显示 实时电流电温
+      //设备类型 消防水箱 消防水池 显示实时水位
+      tooltipTemplate += ' <div class="gg-prober-group">\n' +
+        '                                    <a class="gg-normal-item"><span id="currentM"></span>m</a>\n' +
+        '                                </div>';
+
+      tooltipTemplate += '</div>\n' +
+        '                            <div class="gg-prober-body">\n' +
+        '                                <div class="gg-prober-content">\n' +
+        '                                    <div class="gg-switch-content">\n' +
+        '                                        <div class="gg-btn-capsuleGroup gg-btn-capsuleInline gg-prober-capsule">';
+
+      //设备类型 消防水箱 消防水池 显示实时水位曲线
+      tooltipTemplate += ' <a class="gg-btn-capsule is-active" name="m">水位曲线</a>';
+
+
+      tooltipTemplate += '<a class="gg-btn-capsule">设施信息</a>\n' +
+        '                                            <a class="gg-btn-capsule" name="accidRecord">异常记录</a>\n' +
+        '                                        </div>';
+      tooltipTemplate += '                                        <div class="gg-capuse-time" >\n' +
+        '                                            <a class="gg-capuse-time--item is-active" id="7">近一周</a>\n' +
+        '                                            <a class="gg-capuse-time--item"  id="24">24小时</a>\n' +
+
+        '                                        </div>';
+
+      tooltipTemplate += '                                    </div>\n' +
+        '                                    <div class="gg-prober-model">';
+
+      //设备类型 消防水箱 消防水池 显示实时水位曲线
+      tooltipTemplate += '<div class="gg-prober-unit" is-active >\n' +
+        '                                            <!--水位 折线图-->\n' +
+        '                                            <div class="gg-probe-chart" id="deviceWaterLevel">\n' +
+        '                                            </div>\n' +
+        '                                        </div>'
+
+      tooltipTemplate += '                                        <div class="gg-prober-unit ">\n' +
+        '                                            <!--设施信息 列表-->\n' +
+        '                                            <div class="gg-prober-device-list">';
+
+      tooltipTemplate += '                                                <div class="gg-prober-device">\n' +
+        '                                                    <span class="gg-probe-cell">回路点位：</span>\n' +
+        '                                                    <span class="gg-probe-cell">\n' +
+        '                                                        <a class="gg-probe-unit-item" id="loop"></a>\n' +
+        '                                                    </span>\n' +
+        '                                                </div>\n' +
+
+        '                                                <div class="gg-prober-device">\n' +
+        '                                                    <span class="gg-probe-cell" >设备ID：</span>\n' +
+        '                                                    <span class="gg-probe-cell" id="deviceId"></span>\n' +
+        '                                                </div>';
+
+      tooltipTemplate += '                                                <div class="gg-prober-device">\n' +
+        '                                                    <span class="gg-probe-cell" >设施品牌：</span>\n' +
+        '                                                    <span class="gg-probe-cell" >\n' +
+        '                                                       <a class="gg-probe-unit-item" id="deviceBrand"></a>\n' +
+        '                                               </span>\n' +
+        '                                                </div>';
+
+
+      tooltipTemplate += '                                                <div class="gg-prober-device">\n' +
+        '                                                    <span class="gg-probe-cell">监测装置：</span>\n' +
+        '                                                    <span class="gg-probe-cell">\n' +
+        '                                                        <a class="gg-probe-unit-item" id="deviceTypeName">设施类型+设施编码</a>\n' +
+        '                                                        <a class="gg-probe-unit-item" id="deviceInfo">厂家+品牌+规格型号</a>\n' +
+        '                                                    </span>\n' +
+        '                                                </div>\n' +
+        '                                                <div class="gg-prober-device">\n' +
+        '                                                    <span class="gg-probe-cell" >ID/SN/序列号：</span>\n' +
+        '                                                    <span class="gg-probe-cell" id="controlHost"></span>\n' +
+        '                                                </div>';
+
+
+      tooltipTemplate += '<div class="gg-prober-device">\n' +
+        '                                                    <span class="gg-probe-cell" >电池电压：</span>\n' +
+        '                                                    <span class="gg-probe-cell" id="powersupplyVoltage"></span>V\n' +
+        '                                                </div>'
+      tooltipTemplate += '</div>' +
+        '</div>';
+      tooltipTemplate += '                                        <div class="gg-prober-unit">\n' +
+        '                                            <!--异常记录 列表-->\n' +
+        '                                            <ul class="gg-probe-list" id="deviceAccident">\n' +
+        '                                            </ul>\n' +
+        '                                        </div>';
+
+      tooltipTemplate += '                              </div>\n' +
+        '                                </div>\n' +
+        '                            </div>\n' +
+        '                        </div>\n' +
+        '                </div>\n' +
+        '            </div>';
+      return tooltipTemplate;
+    },
+
+    //烟感
+    smokeHtml: function () {
+      var tooltipTemplate = '<div class="floor-main-wrap gg-prtrol-pos">' +
+        '<div class="gg-structure">' +
+        '<!--烟感 面板-->';
+      tooltipTemplate += '<div class="gg-warnNum-dialog gg-prober-pos gg-warnNum-short-dialog">';
+
+
+      tooltipTemplate += '<div class="gg-prober-header clearfix">' +
+        '<div class="gg-prober-header--info">' +
+        '<span class="gg-prober-h5" id="deviceTitle"></span><a class="gg-online-item"><span id="onlineState"></span></a>' +
+        '<a class="gg-prober-location"><span id="deviceTitle1" title=""></span></a>' +
+        '</div>';
+
+      tooltipTemplate += '<div class="gg-prober-group">' +
+        '<a class="gg-normal-item"><span id="currentState">正常</span></a>' +
+        '</div>';
+      tooltipTemplate += '</div>' +
+        '<div class="gg-prober-body">' +
+        '<div class="gg-prober-content">' +
+        '<div class="gg-switch-content">' +
+        '<div class="gg-btn-capsuleGroup gg-btn-capsuleInline gg-prober-capsule">';
+
+      tooltipTemplate += '<a class="gg-btn-capsule is-active" name="info">设施信息</a>' +
+        '<a class="gg-btn-capsule" name="accidRecord">异常记录</a>' +
+        '</div>';
+      tooltipTemplate += '</div>' +
+        '<div class="gg-prober-model">';
+
+      tooltipTemplate += '<div class="gg-prober-unit ">' +
+        '<!--设施信息 列表-->' +
+        '<div class="gg-prober-device-list">';
+      tooltipTemplate += '<div class="gg-prober-device">' +
+        '<span class="gg-probe-cell" >设备ID：</span>' +
+        '<span class="gg-probe-cell" id="deviceId"></span>' +
+        '</div>';
+
+      tooltipTemplate += '<div class="gg-prober-device">' +
+        '<span class="gg-probe-cell" >设施品牌：</span>' +
+        '<span class="gg-probe-cell" id="deviceBrand"></span>' +
+        '</div>';
+      tooltipTemplate += '<div class="gg-prober-device">' +
+        '<span class="gg-probe-cell" >型号：</span>' +
+        '<span class="gg-probe-cell" id="deviceInfo"></span>' +
+        '</div>';
+      tooltipTemplate += '<div class="gg-prober-device">' +
+        '<span class="gg-probe-cell" >模组：</span>' +
+        '<span class="gg-probe-cell" id="deviceModule"></span>' +
+        '</div>';
+      tooltipTemplate += '<div class="gg-prober-device">' +
+        '<span class="gg-probe-cell" >NB卡号：</span>' +
+        '<span class="gg-probe-cell" id="deviceNB"></span>' +
+        '</div>';
+      tooltipTemplate += '<div class="gg-prober-device">' +
+        '<span class="gg-probe-cell" >安装日期：</span>' +
+        '<span class="gg-probe-cell" id="installDate"></span>' +
+        '</div>';
+
+      tooltipTemplate += '</div>' +
+        '</div>';
+      tooltipTemplate += '<div class="gg-prober-unit">' +
+        '<!--异常记录 列表-->' +
+        '<ul class="gg-probe-list" id="deviceAccident">' +
+        '</ul>' +
+        '</div>';
+
+      tooltipTemplate += '</div>' +
+        '</div>' +
+        '</div>' +
+        '</div>' +
+        '</div>' +
+        '</div>';
+      return tooltipTemplate;
+
+    },
+    /**
+     * 查询楼栋的建筑类型
+     * @param buildId
+     * @param orgCode
+     */
+    getBuildClass: function (buildId, orgCode) {
+      var data = "";
+      $.ajax({
+        url: api.forent_url.e_record_url + '/buildInfo/getBuildClassByUnitIdBuildId',
+        type: 'get',
+        // async: false,
+        data: {
+          buildId: buildId,
+          unitId: orgCode,
+        },
+        success: function (res) {
+          data = res.data;
+        }
+      });
+      return data;
+    },
+  },
+  watch: {
+    '$store.state.floorDetailObj': function (newVal, oldVal) {
+      if (this.floorObj && this.floorObj.floorAreaImg) {
+      	console.log(this.floorObj,"floorObjfloorObj")
+        this.addPicToMap(api.forent_url.pic_url + "/floorImage/" + this.floorObj.floorAreaImg, 
+
+        this.$store.state.ZS.MONITOR.currentBuild,
+        (this.$store.state.ZS.MONITOR.currentFloor ? this.$store.state.ZS.MONITOR.currentFloor : this.floorObj.floorId)
+        );
+      }
+      if (this.ZS.MONITOR.floor_tooltipWare) this.ZS.MONITOR.floor_tooltipWare.clear();
+    },
+    '$store.state.tableData': function (newVal, oldVal) {
+      this.tableData = this.$store.state.tableData
+    },
+    searchObj: function (newVal, oldVal) {
+
+        this.ZS.MONITOR.deviceLayer && this.ZS.MONITOR.deviceLayer.clear(); // 清除设备点
+      this.getEquipmentListByFloorId(this.$store.state.ZS.MONITOR.currentFloor, this.$store.state.ZS.MONITOR.currentBuild,
+        this.loadEquipmentPoint, newVal.deviceTypeId, newVal.deviceStatus);
+        
+    },
+    '$store.state.linyiFloor': function (newVal, oldVal) {
+      var that = this;
+      if (newVal.deviceId) {
+        var element = that.ZS.MONITOR.deviceLayer.find(newVal.deviceId);
+        if (!element) return;
+        that.ZS.MONITOR.floor_g2map.setCenter(element.geometry);
+        that.ZS.MONITOR.showWindow(element);
+        that.$store.commit('updateZSDevice', '');
+      }
+
+    }
+
+
+  }
+}
+
+</script>
+<style lang="scss">
+.g2-tooltip {
+  border: none !important;
+  position: static !important;
+}
+.floor-g2map {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  margin: 0;
+
+  .ol-zoom,
+  .ol-attribution {
+    display: none;
+  }
+
+  .gg-warnNum-short-dialog {
+    width: 450px;
+    height: 330px;
+  }
+
+  .gg-prober-pos {
+    position: absolute;
+    top: 270px;
+    left: 395px;
+    width: 468px;
+    height: 300px;
+    padding: 12px 9px;
+    text-align: left;
+  }
+
+  .gg-warnNum-short-dialog {
+    width: 450px;
+    height: 330px;
+  }
+
+  .gg-warnNum-dialog {
+    position: absolute;
+    z-index: 999;
+    border: 1px solid #3c8dbc;
+    background-color: #fff;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.22), 0 0 6px rgba(0, 0, 0, 0.34);
+  }
+
+  .gg-warnNum-dialog:before,
+  .gg-warnNum-dialog:after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -18px;
+    display: block;
+    width: 0;
+    height: 0;
+    border: 9px solid transparent;
+    margin-left: -9px;
+  }
+
+  .gg-warnNum-dialog:before {
+    border-top-color: #3c8dbc;
+  }
+
+  .gg-warnNum-dialog:after {
+    border-width: 8px;
+    border-top-color: #fff;
+    bottom: -16px;
+    margin-left: -8px;
+  }
+
+  .gg-prober-header {
+    padding-bottom: 9px;
+    text-align: left;
+  }
+
+  .gg-btn-capsuleGroup a {
+    float: left;
+    margin-right: 0.5rem;
+  }
+
+  .gg-prober-h5 {
+    font-size: 1.8rem;
+    color: #3e3d3d;
+    font-weight: 600;
+  }
+
+  .gg-probe-cell a {
+    color: #000000;
+  }
+
+  #deviceId {
+    color: #000000;
+  }
+
+  .gg-switch-content {
+    border-top: 1px solid #eeeeee;
+    padding-top: 0.6rem;
+  }
+
+  .gg-prober-location {
+    font-size: 1.6rem;
+    padding-top: 0.8rem !important;
+    padding-bottom: 0.4rem !important;
+    color: #000000;
+    display: block;
+    width: 70%;
+    margin-left: 0;
+  }
+
+  .gg-online-item {
+    display: inline-block;
+    padding: 0 9px;
+    margin-left: 10px;
+    color: #fff;
+    font-size: 16px;
+    background-color: #66cc99;
+    border-radius: 5px;
+  }
+
+  .gg-prober-header .gg-prober-group {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+  }
+
+  /* 正常 */
+  .gg-normal-item {
+    display: inline-block;
+    padding: 5px 9px;
+    color: #fff;
+    font-size: 16px;
+    background-color: #66cc99;
+  }
+
+  /* 报警 */
+  .gg-alarm-item {
+    display: inline-block;
+    padding: 5px 9px;
+    color: #fff;
+    font-size: 16px;
+    background-color: #ff3333;
+  }
+
+  /* 故障 */
+  .gg-prober-item {
+    display: inline-block;
+    padding: 5px 9px;
+    color: #fff;
+    font-size: 16px;
+    background-color: #ff951b;
+  }
+
+  /* 预警 */
+  .gg-warning-item {
+    display: inline-block;
+    padding: 5px 9px;
+    color: #fff;
+    font-size: 16px;
+    background-color: #9f1d8b;
+  }
+
+  .gg-prober-unit {
+    margin-top: 10px;
+  }
+
+  .gg-prober-unit:last-child {
+    display: none;
+  }
+
+  .gg-probe-list li {
+    border-bottom: 1px solid #ccc;
+    padding: 8px;
+  }
+
+  #deviceAccident li:nth-child(odd) {
+    background-color: #f8f9fa;
+  }
+
+  .gg-btn-capsule {
+    color: #808080;
+    font-size: 1.6rem;
+    border-radius: 5px;
+    border: 1px solid #808080;
+    cursor: pointer;
+    padding: 2px 12px 2px;
+  }
+
+  .gg-btn-capsule:hover {
+    border: 1px solid #0d87d4;
+    color: #0d87d4;
+  }
+
+  .gg-btn-capsule.is-active {
+    border: 1px solid #0d87d4;
+    color: #0d87d4;
+  }
+
+  .gg-prober-device {
+    margin: 5px 0 5px 0;
+  }
+
+  .gg-prober-device span,
+  .gg-probe-list li a {
+    font-size: 1.6rem;
+  }
+
+  .gg-prober-model {
+    display: inline-block;
+    width: 100%;
+  }
+
+  .gg-probe-list--time {
+    float: right;
+  }
+
+  #deviceAccident {
+    border: 1px solid #ccc;
+    border-bottom: none;
+    border-left: none;
+    border-right: none;
+  }
+}
+
+/*  */
+.gg-prober-unit__table {
+  border: 1px solid #bbb;
+  border-bottom: 0;
+  font-size: 16px;
+  color: #5e5e5e;
+}
+
+.gg-prober-unit table {
+  width: 100%;
+  text-align: center;
+}
+
+.gg-scroll-tbody {
+  height: 184px;
+  overflow-y: auto;
+  border: 1px solid #bbb;
+  font-size: 16px;
+  color: #5e5e5e;
+}
+
+.gg-scroll-tbody {
+  height: 184px;
+  overflow-y: auto;
+  border: 1px solid #bbb;
+  font-size: 16px;
+  color: #5e5e5e;
+}
+
+.gg-prober-unit {
+  display: none;
+  margin-top: 10px;
+}
+
+/* 电气 */
+.gg-chart-ele {
+  width: 466px;
+  height: 165px;
+}
+
+.gg-chart-tem {
+  width: 466px;
+  height: 185px;
+}
+.gg-capuse-time--item.is-active {
+  color: #3c8dbc;
+}
+/*@media screen and (max-width: 1680px) {
+  .floor-g2map {
+    .gg-warnNum-short-dialog {
+      height: 285px;
+      width: 370px;
+      left: 434px;
+      top: 315px;
+    }
+  }
+
+  .gg-scroll-tbody {
+    height: 166px;
+    font-size: 14px;
+  }
+
+  .gg-chart-ele {
+    width: 466px;
+    height: 165px;
+  }
+
+  .gg-chart-tem {
+    width: 466px;
+    height: 185px;
+  }
+}
+
+@media screen and (max-width: 1440px) {
+  .floor-g2map {
+    .gg-warnNum-short-dialog {
+      height: 245px;
+      width: 370px;
+      left: 434px;
+      top: 354px;
+    }
+  }
+
+  .gg-scroll-tbody {
+    height: 130px;
+    font-size: 14px;
+  }
+}*/
+</style>
+<style scoped lang="scss">
+@import "~/assets/css/gg.main.css";
+.el-table th, .el-table tr{
+	font-size: 12px;
+}
+.el-table .cell, .el-table th div, .el-table--border td:first-child .cell, .el-table--border th:first-child .cell{
+	padding-left: 0;
+}
+	.DeviceTable{
+		background: #fff;
+		padding-bottom: 5px;
+		box-shadow:rgba(0,0,0,0.4) 0px 0px 2px;
+		width: 410px;
+		position: absolute;
+		left: 0;
+		top: 10px;
+		z-index: 1000;
+		height: 540px;
+		overflow: hidden;
+		.arrow{
+			font-size: 26px;
+			position: absolute;
+			right: 10px;
+			z-index: 10;
+			top: 19px;
+			cursor: pointer;
+			b{
+				display: block;
+				font-size: 20px;
+			}
+		}
+	}
+	.move-in{
+		animation: move-in 1s alternate;
+		animation-fill-mode: forwards;
+	}
+	@keyframes move-in{
+		from{left: 0;}
+		to{left: -328px;}
+	}
+	.move-out{
+		animation: move-out 1s alternate;
+		animation-fill-mode: forwards;
+	}
+	@keyframes move-out{
+		from{left: -328px;}
+		to{left: 0;}
+	}
+	.deviceBox{
+		display: none;
+		background: #fff;
+		width: 160px;
+		position: absolute;
+		left: 0;
+		font-size: 14px;
+		top: 10px;
+		padding: 8px;
+		z-index: 1000;
+		border: 1px solid #000;
+	}
+	.deviceBox p{
+		padding: 6px 0;
+	}
+	.deviceBox .tag-btn a{
+		display: block;
+		width: 70px;
+		text-align: center;
+		padding: 1px 0;
+		color: #fff;
+		background: #001fff;
+	}
+	
+</style>
+<style>
+		
+	.el-scrollbar__thumb{
+		  background: #CFD8E6;
+		  width: 4px;
+	}
+	.el-table th>.cell{
+		color: #525C66;
+	}
+	.el-table thead{
+		background-color: #F0F3F7;
+		height: 52px;
+		line-height: 52px;
+	}
+	.red{
+		color: red;
+	}
+	.map-detail .gg-build-show .gg-device-image{
+		background-color: #fff !important;
+	}
+</style>

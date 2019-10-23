@@ -1,0 +1,658 @@
+<template>
+  <div>
+    <!-- <div class="l-head">
+    面包屑-->
+    <!-- <Title/>
+    </div>-->
+    <div class="right-main-warpper">
+      <div class="h2-title-wrap">
+        <h2 class="tilte-h2">任务列表</h2>
+        <div class="title-btn-wrap">
+          <template v-if="roleName =='超级管理员' || roleName =='提交人员'">
+            <el-button type="success" @click="submitAddBtn">
+              <i class="el-icon-plus"></i>新增
+            </el-button>
+          </template>
+        </div>
+      </div>
+      <!-- 搜索框 -->
+      <div class="search-bar-wrapper">
+        <el-form label-position="left" inline class="demo-table-expand">
+          <el-form-item label="所属运营中心:">
+            <el-select
+                    v-model="orgListValue"
+                    placeholder="请选择"
+                    filterable
+                    @change="changeSubVal()"
+                    @focus="getOrgListByUserId"
+            >
+              <el-option
+                      v-for="(item,index) in orgList"
+                      :key="index"
+                      :label="item.label"
+                      :value="item.value"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="企业名称:">
+            <el-select
+                    v-model="allUnitListVal"
+                    placeholder="请选择"
+                    @focus="getAllUnit"
+                    filterable
+                    @change="changeUnitVal()"
+                    :loading="loading"
+            >
+              <el-option
+                      v-for="(item,index) in allUnitList"
+                      :key="index"
+                      :label="item.label"
+                      :value="item.value"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="任务描述:">
+            <el-input v-model="describesVal"></el-input>
+          </el-form-item>
+          <el-form-item label="上传人:">
+            <el-input v-model="allUserListVal"></el-input>
+          </el-form-item>
+          <el-form-item label="优先级:">
+            <el-select v-model="priorityListVal" placeholder="请选择" filterable>
+              <el-option
+                      v-for="item in priorityList"
+                      :key="item.id"
+                      :label="item.label"
+                      :value="item.value"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="任务类型:">
+            <el-select v-model="oprFlagListVal" placeholder="请选择" filterable>
+              <el-option
+                      v-for="item in oprFlagList"
+                      :key="item.id"
+                      :label="item.label"
+                      :value="item.value"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item label="任务状态:">
+            <el-select v-model="recordStatusListVal" placeholder="请选择" filterable>
+              <el-option
+                      v-for="item in recordStatusList"
+                      :key="item.id"
+                      :label="item.label"
+                      :value="item.value"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item class="t-right" label=" " style="text-align:left">
+            <el-button type="primary" @click="loadData('search')">查询</el-button>
+            <el-button @click="resetHandel">重置</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+      <div class="newTable">
+        <!-- 表格 -->
+        <el-table ref="table" v-loading="isLoading" :data="tableData" stripe>
+          <el-table-column
+                  align="left"
+                  min-width="15%"
+                  :show-overflow-tooltip="true"
+                  prop="describes"
+                  label="任务描述"
+          ></el-table-column>
+          <el-table-column
+                  align="left"
+                  min-width="10%"
+                  :show-overflow-tooltip="true"
+                  pageSize="pageSize"
+                  prop="unitName"
+                  label="企业名称"
+          ></el-table-column>
+          <el-table-column
+                  align="left"
+                  min-width="12%"
+                  :show-overflow-tooltip="true"
+                  prop="orgName"
+                  label="运营中心名称"
+          ></el-table-column>
+          <el-table-column
+                  align="left"
+                  min-width="9%"
+                  :show-overflow-tooltip="true"
+                  prop="userName"
+                  label="上传人"
+          ></el-table-column>
+          <el-table-column align="center" min-width="9%" prop="priority" label="优先级" sortable>
+            <template slot-scope="scope">
+              <el-tag
+                      :type="scope.row.priority === 1 ? 'danger' : 'primary'"
+                      disable-transitions
+              >{{scope.row.priority === 1 ? '紧急' : '普通'}}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column align="center" min-width="10%" prop="oprFlag" label="任务类型" sortable>
+            <template slot-scope="scope">{{showLabel(scope.row.oprFlag,oprFlagList)}}</template>
+          </el-table-column>
+          <el-table-column align="left" min-width="10%" prop="recordStatus" label="任务状态" sortable>
+            <template slot-scope="scope">{{showLabel(scope.row.recordStatus,recordStatusList)}}</template>
+          </el-table-column>
+          <el-table-column align="center" min-width="15%" label="操作">
+            <template slot-scope="scope">
+              <el-button type="text" class @click="findDetail(scope.$index, scope.row)">查看详情</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <!--分页器-->
+      <Pagination :widgetInfo="widgetInfo" v-on:sonHandleCurrentChange="sonHandleCurrentChange" />
+    </div>
+    <!--    新增弹出框   -->
+    <el-dialog
+            title="新增"
+            class="newDigWrap"
+            :visible.sync="dialogAddVisible"
+            :close-on-press-escape="false"
+            :close-on-click-modal="false"
+            width="580px"
+            :before-close="handleClose"
+    >
+      <div class="height-300">
+        <Upload ref="myChild" :uploadDataVal="uploadDataVal" v-on:saveHandel="saveHandelNewAdd"></Upload>
+      </div>
+    </el-dialog>
+    <el-dialog title="编辑" :visible.sync="dialogEditVisible">
+      <div class="height-300">
+        <EditUpload :editUploadData="editUploadData" v-on:saveHandel="saveHandelEdit"></EditUpload>
+      </div>
+    </el-dialog>
+  </div>
+</template>
+<script>
+  import api from "~/config/http";
+  import Title from "~/components/Title";
+  import axios from "axios";
+  import Pagination from "~/components/Pagination";
+  import Upload from "~/components/upload/newAddUpload";
+  import EditUpload from "~/components/upload/editUpload";
+  import OtherUpload from "~/components/upload/otherUpload";
+  export default {
+    components: {
+      Title,
+      Pagination,
+      Upload,
+      EditUpload,
+      OtherUpload
+    },
+    data() {
+      return {
+        // tableHeight: "480px",
+        menuKey: 1000001,
+        operationOrgId: "",
+        unitId: "",
+        selectedOptions: ["1"],
+        dialogAddVisible: false,
+        dialogEditVisible: false,
+        dialogOtherVisible: false,
+        formLabelWidth: "120px",
+        plan: {},
+        widgetInfo: {
+          total: null,
+          pageSize: 12,
+          pageNo: 1
+        },
+        tableData: [],
+        isLoading: false,
+        orgList: [],
+        orgListValue: "",
+        allUnitList: [],
+        allUnitListVal: "",
+        allUserList: [],
+        allUserListVal: "",
+        priorityList: [
+          {
+            id: "0003",
+            value: "",
+            label: "全部"
+          },
+          {
+            id: "0001",
+            value: "1",
+            label: "紧急"
+          },
+          {
+            id: "0002",
+            value: "2",
+            label: "普通"
+          }
+        ],
+        priorityListVal: "",
+        oprFlagList: [
+          {
+            id: "00001",
+            value: "",
+            label: "全部"
+          },
+          {
+            id: "00002",
+            value: "1",
+            label: "新建"
+          },
+          {
+            id: "00003",
+            value: "2",
+            label: "修改"
+          },
+          {
+            id: "00004",
+            value: "3",
+            label: "删除"
+          },
+          {
+            id: "00005",
+            value: "4",
+            label: "补录"
+          }
+        ],
+        oprFlagListVal: "",
+        recordStatusList: [
+          {
+            id: "001",
+            value: "",
+            label: "全部"
+          },
+          {
+            id: "002",
+            value: "1",
+            label: "初审中"
+          },
+          {
+            id: "003",
+            value: "2",
+            label: "初审驳回"
+          },
+          {
+            id: "004",
+            value: "3",
+            label: "复审中"
+          },
+          {
+            id: "005",
+            value: "4",
+            label: "复审驳回"
+          },
+          {
+            id: "006",
+            value: "5",
+            label: "建档中"
+          },
+          {
+            id: "007",
+            value: "6",
+            label: "建档驳回"
+          },
+          {
+            id: "008",
+            value: "7",
+            label: "建档审核"
+          },
+          {
+            id: "009",
+            value: "8",
+            label: "同步数据"
+          }
+          // {
+          //   id: "010",
+          //   value: "9",
+          //   label: "数据回滚"
+          // }
+        ],
+        recordStatusListVal: "",
+        describesVal: "",
+        uploadDataVal: {},
+        editUploadData: {},
+        otherUpload: {},
+        roleName: null,
+        roleId: null,
+        userId: null,
+        loading: false
+      };
+    },
+
+    created() {
+      const that = this;
+      // that.roleName = localStorage.getItem("roleName");
+      // that.roleId = localStorage.getItem("roleId");
+      // that.userId = localStorage.getItem("userId");
+    },
+    mounted() {
+      const that = this;
+      this.$nextTick(() => {
+        that.roleName = localStorage.getItem("roleName");
+        that.roleId = localStorage.getItem("roleId");
+        that.userId = localStorage.getItem("userId");
+        that.getOrgListByUserId();
+      });
+    },
+    watch: {},
+    methods: {
+      //选择运营中心时候的操作
+      changeSubVal() {
+        this.allUnitListVal = null;
+      },
+      //选择企业的时候
+      changeUnitVal() {
+        return (this.orgListValue = this.allUnitList.find(
+                item => item.value == this.allUnitListVal
+        ).subCenterCode);
+      },
+      //根据用户id,系统编码获取组织机构列表
+      getOrgListByUserId() {
+        var that = this;
+        // console.log(222222,that.roleName)
+        // console.log(222222,that.roleId)
+        api
+                .post(
+                        "/remoteApi/tool/org/findOrgListByRole",
+                        {
+                          userId:  localStorage.getItem("userId"),
+                          roleName: localStorage.getItem("roleName")
+                        },
+                        5000
+                )
+                .then(res => {
+                  if (res.code === "success") {
+                    if (res.data && res.data.length > 0) {
+                      that.orgList = [];
+                      res.data.map(function(item) {
+                        that.orgList.push({
+                          label: item.orgName,
+                          value: item.orgCode
+                        });
+                      });
+                    }
+                  } else {
+                    this.$message({
+                      type: "warning",
+                      message: "错误"
+                    });
+                  }
+                })
+                .catch(err => {
+                  this.$message({
+                    type: "warning",
+                    message: err
+                  });
+                });
+      },
+      //获取所有企业
+      getAllUnit() {
+        var that = this;
+        that.allUnitList = [];
+        this.loading = true;
+        api
+                .post(
+                        "/remoteApi/tool/unit/findAllUnit",
+                        {
+                          subCenterCode: this.orgListValue
+                        },
+                        5000
+                )
+                .then(res => {
+                  if (res.code === "success") {
+                    this.loading = false;
+                    if (res.data && res.data.length > 0) {
+                      that.allUnitList = [{label:'全部',value:'',subCenterCode:''}];
+                      res.data.map(function(item) {
+                        that.allUnitList.push({
+                          label: item.label,
+                          value: item.value,
+                          subCenterCode: item.subCenterCode
+                        });
+                      });
+                    }
+                  }
+                })
+                .catch(err => {
+                  this.$message({
+                    type: "warning",
+                    message: err
+                  });
+                });
+      },
+      //查看详情
+      findDetail(index, row) {
+        row["limtShow"] = true;
+        this._Storage.setObj("fileItem", "obj", row);
+        this.$router.push({
+          name: "PatrolPlan-FacilitiesDetail",
+          params: {
+            row: row
+          }
+        });
+        localStorage.setItem("unitId", row.unitId);
+        localStorage.setItem("uploadData", row.unitId);
+        localStorage.setItem("routerFlag", 'routerFlagOne');
+      },
+
+      //操作按钮显示的方法
+      showButton(arr, value) {
+        return arr.indexOf(value) > -1;
+      },
+
+      //重置
+      resetHandel() {
+        this.describesVal = null;
+        this.orgListValue = null;
+        this.allUnitListVal = null;
+        this.allUserListVal = null;
+        this.priorityListVal = null;
+        this.oprFlagListVal = null;
+        this.recordStatusListVal = null;
+        this.loadData("search");
+      },
+      //新增弹出框保存事件
+      saveHandelNewAdd() {
+        var that = this;
+        that.dialogAddVisible = false;
+        that.loadData("search");
+      },
+      //编辑弹出框保存事件
+      saveHandelEdit() {
+        var that = this;
+        that.dialogEditVisible = false;
+        that.loadData("search");
+      },
+      //将任务类型和任务状态对应的中文显示出来
+      showLabel(key, list) {
+        return list.find(item => item.value == key).label;
+      },
+      //获取任务列表
+      loadData(pagenoFlag) {
+        var that = this;
+        that.isLoading = true;
+        api
+                .post(
+                        "/remoteApi/tool/recordTrial/findRecordTrialList",
+                        {
+                          pageSize: that.widgetInfo.pageSize,
+                          // pageNo: that.widgetInfo.pageNo,
+                          pageNo: pagenoFlag == "search" ? "1" : that.widgetInfo.pageNo,
+                          subCenterCode: that.orgListValue,
+                          unitId: that.allUnitListVal,
+                          createdBy: that.allUserListVal,
+                          recordStatus: that.recordStatusListVal,
+                          describes: that.describesVal,
+                          priority: that.priorityListVal,
+                          oprFlag: that.oprFlagListVal,
+                          roleNames: localStorage.getItem("roleName"),
+                          userId:  localStorage.getItem("userId")
+                        },
+                        5000
+                )
+                .then(res => {
+                  if (res.code === "success") {
+                    that.isLoading = false;
+                    that.tableData = res.data.rows;
+                    that.widgetInfo.total = res.data.total == null ? 0 : res.data.total;
+                    that.widgetInfo.pageSize = res.data.pageSize;
+                    that.widgetInfo.pageNo = res.data.pageNo;
+                  }else{
+                    that.isLoading = false;
+                    that.$message({
+                      type: "warning",
+                      message: res.rspMsg
+                    });
+                  }
+                })
+                .catch(err => {
+                  that.isLoading = false;
+                  that.$message({
+                    type: "warning",
+                    message: err
+                  });
+                });
+      },
+      //新增按钮
+      submitAddBtn() {
+        var that = this;
+        that.dialogAddVisible = true;
+        that.uploadDataVal.type = "newAdd";
+        that.uploadDataVal.timestamp = new Date().getTime();
+        console.log(that.uploadDataVal.timestamp)
+      },
+      //新增弹框关闭
+      handleClose(){
+        var that = this;
+        that.dialogAddVisible = false;
+        that.$refs.myChild.close()
+
+      },
+      // 分页
+      sonHandleCurrentChange(widgetInfo) {
+        this.widgetInfo.pageSize = widgetInfo.pageSize
+                ? parseInt(widgetInfo.pageSize)
+                : this.widgetInfo.pageSize;
+        this.widgetInfo.pageNo = widgetInfo.pageNo
+                ? parseInt(widgetInfo.pageNo)
+                : this.widgetInfo.pageNo;
+        this.loadData("load");
+      },
+      //跳转页面
+      jumpLinkPage(index, row) {
+        this.$router.push({
+          name: "PatrolPlan-addElectronic",
+          params: {
+            unitId: row.unitId,
+            fileId: row.id,
+            subCenterCode: row.subCenterCode,
+            show: true
+          }
+        });
+      },
+      //上传按钮
+      handleUpload(index, row) {
+        console.log(index, row);
+        this.dialogOtherVisible = true;
+      }
+    }
+  };
+</script>
+<style lang="scss" scoped>
+
+  .right-main-warpper {
+    background: #fff;
+    .search-bar-wrapper {
+      padding-top: 8px;
+      .el-select {
+        width: 100%;
+      }
+    }
+    .el-button + .el-button {
+      margin-left: 5px;
+    }
+    /deep/.demo-table-expand {
+      font-size: 0;
+      &.dialog-expand {
+        .el-form-item {
+          margin-bottom: 8px;
+
+          label {
+            color: #0d87d4;
+            text-align: left;
+          }
+          .el-form-item__content {
+            width: calc(100% - 20px);
+          }
+        }
+      }
+      .el-form-item {
+        margin-right: 0;
+        margin-bottom: 0;
+        width: 25%;
+        label {
+          width: 110px;
+          text-align: right;
+          padding-left: 5px;
+          color: #99a9bf;
+          display: inline-block;
+        }
+
+        .el-form-item__content {
+          height: 43px;
+          width: calc(100% - 120px);
+          .span-show {
+            height: 32px;
+            display: inline-block;
+            width: auto;
+            max-width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+          }
+        }
+      }
+    }
+    .row-bg {
+      padding: 10px 0;
+      padding-top: 15px;
+    }
+    .showHide {
+      display: none;
+    }
+  }
+
+  .notab {
+    border-top: none;
+  }
+
+  .task-list-content {
+    background: #fff;
+    padding: 5px;
+    .task-list-top {
+      text-align: right;
+      margin: 5px 0;
+      vertical-align: top;
+      .el-button--primary {
+        vertical-align: top;
+      }
+    }
+    .height-200 {
+      padding: 30px 0;
+    }
+  }
+  .height-300 {
+    max-height: 560px;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  /deep/.el-table {
+    .el-table__body-wrapper {
+      height: calc(100vh - 90px - 60px - 140px - 70px);
+      overflow-y: auto;
+    }
+  }
+</style>
+

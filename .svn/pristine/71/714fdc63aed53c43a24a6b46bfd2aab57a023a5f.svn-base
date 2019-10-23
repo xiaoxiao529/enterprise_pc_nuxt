@@ -1,0 +1,58 @@
+.mainPageNew .right-main-warpper {
+  background: #fff;
+  height: calc(100vh - 55px - 20px - 20px);
+  overflow: hidden;
+  border: 1px solid #e1e5eb;
+}
+
+.mainPageNew .el-table th {
+  border-bottom: none !important;
+  background: #f0f3f7 !important;
+  font-weight: bold;
+  color: #525c66;
+  border-top: none !important;
+}
+
+.mainPageNew .el-table td,
+.mainPageNew .el-table th.is-leaf {
+  border-bottom: none !important;
+}
+
+.mainPageNew .newTable {
+  height: calc(100% - 215px);
+}
+
+.mainPageNew .newTable .has-gutter .cell {
+  font-size: 14px;
+}
+
+.mainPageNew .el-pagination {
+  background: #fff;
+}
+
+.h2-title-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 65px;
+  padding: 0 25px;
+  border-bottom: 1px solid #e1e5eb;
+}
+
+.h2-title-wrap .tilte-h2 {
+  font-size: 18px;
+  font-weight: bold;
+  color: #25282e;
+  text-align: left;
+  flex: 1;
+}
+
+.h2-title-wrap .title-btn-wrap {
+  text-align: right;
+  flex: 1;
+}
+
+.upload-content-big .el-form-item .el-form-item__label {
+  margin-bottom: 0;
+  padding: 0;
+}

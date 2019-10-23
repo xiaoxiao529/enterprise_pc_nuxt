@@ -1,0 +1,522 @@
+import Vue from 'vue'
+import Router from 'vue-router'
+import { interopDefault } from './utils'
+
+const _f50c6b84 = () => interopDefault(import('../pages/Building.vue' /* webpackChunkName: "pages/Building" */))
+const _0f538e2c = () => interopDefault(import('../pages/ChangePsw.vue' /* webpackChunkName: "pages/ChangePsw" */))
+const _6ad68051 = () => interopDefault(import('../pages/ConfigManage.vue' /* webpackChunkName: "pages/ConfigManage" */))
+const _51f07d76 = () => interopDefault(import('../pages/EquipmentInfo/index.vue' /* webpackChunkName: "pages/EquipmentInfo/index" */))
+const _6217f119 = () => interopDefault(import('../pages/G2mapNew.vue' /* webpackChunkName: "pages/G2mapNew" */))
+const _7dcbd803 = () => interopDefault(import('../pages/Group_main.vue' /* webpackChunkName: "pages/Group_main" */))
+const _7a4e4822 = () => interopDefault(import('../pages/login.vue' /* webpackChunkName: "pages/login" */))
+const _08ed4494 = () => interopDefault(import('../pages/RealTimeMonitoringDevice/index.vue' /* webpackChunkName: "pages/RealTimeMonitoringDevice/index" */))
+const _71603ac1 = () => interopDefault(import('../pages/Refresh.vue' /* webpackChunkName: "pages/Refresh" */))
+const _ab262462 = () => interopDefault(import('../pages/tables.vue' /* webpackChunkName: "pages/tables" */))
+const _f489ba96 = () => interopDefault(import('../pages/UserAuditMgr/index.vue' /* webpackChunkName: "pages/UserAuditMgr/index" */))
+const _3f7f4656 = () => interopDefault(import('../pages/AuthManage/AuthManage.vue' /* webpackChunkName: "pages/AuthManage/AuthManage" */))
+const _22688ed7 = () => interopDefault(import('../pages/AuthManage/ExpertManage.vue' /* webpackChunkName: "pages/AuthManage/ExpertManage" */))
+const _202ec868 = () => interopDefault(import('../pages/AuthManage/MenuManage.vue' /* webpackChunkName: "pages/AuthManage/MenuManage" */))
+const _9678b39e = () => interopDefault(import('../pages/AuthManage/PasswordLevel.vue' /* webpackChunkName: "pages/AuthManage/PasswordLevel" */))
+const _348e2d09 = () => interopDefault(import('../pages/AuthManage/PasswordRegular.vue' /* webpackChunkName: "pages/AuthManage/PasswordRegular" */))
+const _4cad5623 = () => interopDefault(import('../pages/AuthManage/RoleManage.vue' /* webpackChunkName: "pages/AuthManage/RoleManage" */))
+const _17fe71b6 = () => interopDefault(import('../pages/AuthManage/SystemInfo.vue' /* webpackChunkName: "pages/AuthManage/SystemInfo" */))
+const _06145b38 = () => interopDefault(import('../pages/AuthManage/UserManage.vue' /* webpackChunkName: "pages/AuthManage/UserManage" */))
+const _06e11ef8 = () => interopDefault(import('../pages/authManagement/userManagement.vue' /* webpackChunkName: "pages/authManagement/userManagement" */))
+const _92d255f8 = () => interopDefault(import('../pages/Basedate/DistrictMgr.vue' /* webpackChunkName: "pages/Basedate/DistrictMgr" */))
+const _0f61fc2a = () => interopDefault(import('../pages/Basedate/OrgMgr.vue' /* webpackChunkName: "pages/Basedate/OrgMgr" */))
+const _6941edec = () => interopDefault(import('../pages/CacheManagement/CacheInfo.vue' /* webpackChunkName: "pages/CacheManagement/CacheInfo" */))
+const _6ea6ed4e = () => interopDefault(import('../pages/CacheManagement/CacheInit.vue' /* webpackChunkName: "pages/CacheManagement/CacheInit" */))
+const _7231a6e2 = () => interopDefault(import('../pages/electricalPanel/ElectricalPanel.vue' /* webpackChunkName: "pages/electricalPanel/ElectricalPanel" */))
+const _ef0c242e = () => interopDefault(import('../pages/examples/use-markdown-editor.vue' /* webpackChunkName: "pages/examples/use-markdown-editor" */))
+const _1a30da52 = () => interopDefault(import('../pages/examples/vue-echarts.vue' /* webpackChunkName: "pages/examples/vue-echarts" */))
+const _6bc5a050 = () => interopDefault(import('../pages/examples/vue-Font-Awesome.vue' /* webpackChunkName: "pages/examples/vue-Font-Awesome" */))
+const _095b67ca = () => interopDefault(import('../pages/examples/vue-photo-preview.vue' /* webpackChunkName: "pages/examples/vue-photo-preview" */))
+const _19d55a2b = () => interopDefault(import('../pages/examples/vue-swiper.vue' /* webpackChunkName: "pages/examples/vue-swiper" */))
+const _43ed312a = () => interopDefault(import('../pages/Group/ElMap.vue' /* webpackChunkName: "pages/Group/ElMap" */))
+const _0343acfd = () => interopDefault(import('../pages/LogManage/AuditConfig.vue' /* webpackChunkName: "pages/LogManage/AuditConfig" */))
+const _33abefc9 = () => interopDefault(import('../pages/LogManage/LogManage.vue' /* webpackChunkName: "pages/LogManage/LogManage" */))
+const _2515f8d2 = () => interopDefault(import('../pages/LogManage/LogManage - 副本.vue' /* webpackChunkName: "pages/LogManage/LogManage - 副本" */))
+const _56adee37 = () => interopDefault(import('../pages/MaintenanceService/EmergencyService.vue' /* webpackChunkName: "pages/MaintenanceService/EmergencyService" */))
+const _d150eca8 = () => interopDefault(import('../pages/MaintenanceService/MaintenanceRelation.vue' /* webpackChunkName: "pages/MaintenanceService/MaintenanceRelation" */))
+const _a1978830 = () => interopDefault(import('../pages/MaintenanceService/MaintenanceRelationship.vue' /* webpackChunkName: "pages/MaintenanceService/MaintenanceRelationship" */))
+const _b7acd038 = () => interopDefault(import('../pages/MaintenanceService/RoutineService.vue' /* webpackChunkName: "pages/MaintenanceService/RoutineService" */))
+const _05904236 = () => interopDefault(import('../pages/MessManage/MaintContract.vue' /* webpackChunkName: "pages/MessManage/MaintContract" */))
+const _7e9c7740 = () => interopDefault(import('../pages/MessManage/MonitReports.vue' /* webpackChunkName: "pages/MessManage/MonitReports" */))
+const _d6ee1274 = () => interopDefault(import('../pages/MessManage/PlanManage.vue' /* webpackChunkName: "pages/MessManage/PlanManage" */))
+const _bfa7c542 = () => interopDefault(import('../pages/MessManage/PriseInfo.vue' /* webpackChunkName: "pages/MessManage/PriseInfo" */))
+const _a7175d70 = () => interopDefault(import('../pages/MessManage/RiskReports.vue' /* webpackChunkName: "pages/MessManage/RiskReports" */))
+const _6cf57b2f = () => interopDefault(import('../pages/MessManage/SafetyManage.vue' /* webpackChunkName: "pages/MessManage/SafetyManage" */))
+const _4d31a7b2 = () => interopDefault(import('../pages/MessManage/Training.vue' /* webpackChunkName: "pages/MessManage/Training" */))
+const _76f7c9de = () => interopDefault(import('../pages/MessManage/YearPlan.vue' /* webpackChunkName: "pages/MessManage/YearPlan" */))
+const _565e4a08 = () => interopDefault(import('../pages/operationMonitor/monitorReport.vue' /* webpackChunkName: "pages/operationMonitor/monitorReport" */))
+const _753ba434 = () => interopDefault(import('../pages/operationMonitor/monitorReport2.vue' /* webpackChunkName: "pages/operationMonitor/monitorReport2" */))
+const _51fe1d0d = () => interopDefault(import('../pages/PatrolPlan/addElectronic.vue' /* webpackChunkName: "pages/PatrolPlan/addElectronic" */))
+const _71a7214f = () => interopDefault(import('../pages/PatrolPlan/archivesList.vue' /* webpackChunkName: "pages/PatrolPlan/archivesList" */))
+const _50b7e984 = () => interopDefault(import('../pages/PatrolPlan/ControlRoomDuty.vue' /* webpackChunkName: "pages/PatrolPlan/ControlRoomDuty" */))
+const _0e825747 = () => interopDefault(import('../pages/PatrolPlan/editAll.vue' /* webpackChunkName: "pages/PatrolPlan/editAll" */))
+const _4321d028 = () => interopDefault(import('../pages/PatrolPlan/FacilitiesContent.vue' /* webpackChunkName: "pages/PatrolPlan/FacilitiesContent" */))
+const _59b9ddf2 = () => interopDefault(import('../pages/PatrolPlan/FacilitiesDetail.vue' /* webpackChunkName: "pages/PatrolPlan/FacilitiesDetail" */))
+const _31269d15 = () => interopDefault(import('../pages/PatrolPlan/FacilitiesInspection.vue' /* webpackChunkName: "pages/PatrolPlan/FacilitiesInspection" */))
+const _26c6bf7d = () => interopDefault(import('../pages/PatrolPlan/PatrolContent.vue' /* webpackChunkName: "pages/PatrolPlan/PatrolContent" */))
+const _67cdf1a0 = () => interopDefault(import('../pages/PatrolPlan/PatrolInspection.vue' /* webpackChunkName: "pages/PatrolPlan/PatrolInspection" */))
+const _5cbffbea = () => interopDefault(import('../pages/PatrolPlan/punctuation.vue' /* webpackChunkName: "pages/PatrolPlan/punctuation" */))
+const _9ac0e23a = () => interopDefault(import('../pages/PatrolPlan/taskList.vue' /* webpackChunkName: "pages/PatrolPlan/taskList" */))
+const _5173bfbe = () => interopDefault(import('../pages/PatrolPlan/upload.vue' /* webpackChunkName: "pages/PatrolPlan/upload" */))
+const _839e4ba0 = () => interopDefault(import('../pages/PatrolPlan/uploadFinishFile.vue' /* webpackChunkName: "pages/PatrolPlan/uploadFinishFile" */))
+const _399c4f3f = () => interopDefault(import('../pages/SafetySupervision/AlarmCheck.vue' /* webpackChunkName: "pages/SafetySupervision/AlarmCheck" */))
+const _41648d76 = () => interopDefault(import('../pages/SafetySupervision/ControlRoomDuty.vue' /* webpackChunkName: "pages/SafetySupervision/ControlRoomDuty" */))
+const _631bfff4 = () => interopDefault(import('../pages/SafetySupervision/ElectricalFireWarning.vue' /* webpackChunkName: "pages/SafetySupervision/ElectricalFireWarning" */))
+const _14f6bddd = () => interopDefault(import('../pages/SafetySupervision/FacilitiesInspection.vue' /* webpackChunkName: "pages/SafetySupervision/FacilitiesInspection" */))
+const _4db570a2 = () => interopDefault(import('../pages/SafetySupervision/FirePreventionInspection.vue' /* webpackChunkName: "pages/SafetySupervision/FirePreventionInspection" */))
+const _7699147a = () => interopDefault(import('../pages/SafetySupervision/FirePreventionPatrol.vue' /* webpackChunkName: "pages/SafetySupervision/FirePreventionPatrol" */))
+const _2aea28b5 = () => interopDefault(import('../pages/SafetySupervision/HiddenDangerRectification.vue' /* webpackChunkName: "pages/SafetySupervision/HiddenDangerRectification" */))
+const _34020696 = () => interopDefault(import('../pages/StatisticalQuery/HiddenStatistics.vue' /* webpackChunkName: "pages/StatisticalQuery/HiddenStatistics" */))
+const _7ddc2dae = () => interopDefault(import('../pages/StatisticalQuery/PoliceStatistics.vue' /* webpackChunkName: "pages/StatisticalQuery/PoliceStatistics" */))
+const _6bf6d844 = () => interopDefault(import('../pages/StatisticalQuery/PreWarningStatistics.vue' /* webpackChunkName: "pages/StatisticalQuery/PreWarningStatistics" */))
+const _5a6757dd = () => interopDefault(import('../pages/StatisticalQuery/SafetyStatistics.vue' /* webpackChunkName: "pages/StatisticalQuery/SafetyStatistics" */))
+const _0d720a77 = () => interopDefault(import('../pages/SystemManagement/OrgMgr.vue' /* webpackChunkName: "pages/SystemManagement/OrgMgr" */))
+const _badf9bd8 = () => interopDefault(import('../pages/SystemManagement/UserManagement/index.vue' /* webpackChunkName: "pages/SystemManagement/UserManagement/index" */))
+const _4922c539 = () => interopDefault(import('../pages/authManagement/chart/list.vue' /* webpackChunkName: "pages/authManagement/chart/list" */))
+const _46d589fa = () => interopDefault(import('../pages/authManagement/component/list.vue' /* webpackChunkName: "pages/authManagement/component/list" */))
+const _3c5be8e6 = () => interopDefault(import('../pages/authManagement/component/son.vue' /* webpackChunkName: "pages/authManagement/component/son" */))
+const _1ab64b62 = () => interopDefault(import('../pages/authManagement/organization/add.vue' /* webpackChunkName: "pages/authManagement/organization/add" */))
+const _0dbd16cc = () => interopDefault(import('../pages/authManagement/organization/edit.vue' /* webpackChunkName: "pages/authManagement/organization/edit" */))
+const _03162140 = () => interopDefault(import('../pages/authManagement/organization/list.vue' /* webpackChunkName: "pages/authManagement/organization/list" */))
+const _3ad6fbdf = () => interopDefault(import('../pages/authManagement/organization/orgAdd.vue' /* webpackChunkName: "pages/authManagement/organization/orgAdd" */))
+const _6861b188 = () => interopDefault(import('../pages/authManagement/organization/orgEdit.vue' /* webpackChunkName: "pages/authManagement/organization/orgEdit" */))
+const _693352e7 = () => interopDefault(import('../pages/authManagement/user/add.vue' /* webpackChunkName: "pages/authManagement/user/add" */))
+const _68fdb134 = () => interopDefault(import('../pages/authManagement/user/edit.vue' /* webpackChunkName: "pages/authManagement/user/edit" */))
+const _59b589c8 = () => interopDefault(import('../pages/authManagement/user/list.vue' /* webpackChunkName: "pages/authManagement/user/list" */))
+const _6f4ac772 = () => interopDefault(import('../pages/authManagement/user/orgAdd.vue' /* webpackChunkName: "pages/authManagement/user/orgAdd" */))
+const _2280d858 = () => interopDefault(import('../pages/authManagement/user/orgEdit.vue' /* webpackChunkName: "pages/authManagement/user/orgEdit" */))
+const _258eb4e5 = () => interopDefault(import('../pages/MessManage/PriseInfoView/Edit.vue' /* webpackChunkName: "pages/MessManage/PriseInfoView/Edit" */))
+const _b2c15738 = () => interopDefault(import('../pages/SystemManagement/UserManagement/LogoffUser.vue' /* webpackChunkName: "pages/SystemManagement/UserManagement/LogoffUser" */))
+const _15bf8b1a = () => interopDefault(import('../pages/SystemManagement/UserManagement/ModifyUser.vue' /* webpackChunkName: "pages/SystemManagement/UserManagement/ModifyUser" */))
+const _0d9d8e50 = () => interopDefault(import('../pages/index.vue' /* webpackChunkName: "pages/index" */))
+
+Vue.use(Router)
+
+if (process.client) {
+  window.history.scrollRestoration = 'manual'
+}
+const scrollBehavior = function (to, from, savedPosition) {
+  // if the returned position is falsy or an empty object,
+  // will retain current scroll position.
+  let position = false
+
+  // if no children detected
+  if (to.matched.length < 2) {
+    // scroll to the top of the page
+    position = { x: 0, y: 0 }
+  } else if (to.matched.some(r => r.components.default.options.scrollToTop)) {
+    // if one of the children has scrollToTop option set to true
+    position = { x: 0, y: 0 }
+  }
+
+  // savedPosition is only available for popstate navigations (back button)
+  if (savedPosition) {
+    position = savedPosition
+  }
+
+  return new Promise((resolve) => {
+    // wait for the out transition to complete (if necessary)
+    window.$nuxt.$once('triggerScroll', () => {
+      // coords will be used if no selector is provided,
+      // or if the selector didn't match any element.
+      if (to.hash) {
+        let hash = to.hash
+        // CSS.escape() is not supported with IE and Edge.
+        if (typeof window.CSS !== 'undefined' && typeof window.CSS.escape !== 'undefined') {
+          hash = '#' + window.CSS.escape(hash.substr(1))
+        }
+        try {
+          if (document.querySelector(hash)) {
+            // scroll to anchor by returning the selector
+            position = { selector: hash }
+          }
+        } catch (e) {
+          console.warn('Failed to save scroll position. Please add CSS.escape() polyfill (https://github.com/mathiasbynens/CSS.escape).')
+        }
+      }
+      resolve(position)
+    })
+  })
+}
+
+export function createRouter() {
+  return new Router({
+    mode: 'history',
+    base: '/',
+    linkActiveClass: 'nuxt-link-active',
+    linkExactActiveClass: 'nuxt-link-exact-active',
+    scrollBehavior,
+
+    routes: [{
+      path: "/Building",
+      component: _f50c6b84,
+      name: "Building"
+    }, {
+      path: "/ChangePsw",
+      component: _0f538e2c,
+      name: "ChangePsw"
+    }, {
+      path: "/ConfigManage",
+      component: _6ad68051,
+      name: "ConfigManage"
+    }, {
+      path: "/EquipmentInfo",
+      component: _51f07d76,
+      name: "EquipmentInfo"
+    }, {
+      path: "/G2mapNew",
+      component: _6217f119,
+      name: "G2mapNew"
+    }, {
+      path: "/Group_main",
+      component: _7dcbd803,
+      name: "Group_main"
+    }, {
+      path: "/login",
+      component: _7a4e4822,
+      name: "login"
+    }, {
+      path: "/RealTimeMonitoringDevice",
+      component: _08ed4494,
+      name: "RealTimeMonitoringDevice"
+    }, {
+      path: "/Refresh",
+      component: _71603ac1,
+      name: "Refresh"
+    }, {
+      path: "/tables",
+      component: _ab262462,
+      name: "tables"
+    }, {
+      path: "/UserAuditMgr",
+      component: _f489ba96,
+      name: "UserAuditMgr"
+    }, {
+      path: "/AuthManage/AuthManage",
+      component: _3f7f4656,
+      name: "AuthManage-AuthManage"
+    }, {
+      path: "/AuthManage/ExpertManage",
+      component: _22688ed7,
+      name: "AuthManage-ExpertManage"
+    }, {
+      path: "/AuthManage/MenuManage",
+      component: _202ec868,
+      name: "AuthManage-MenuManage"
+    }, {
+      path: "/AuthManage/PasswordLevel",
+      component: _9678b39e,
+      name: "AuthManage-PasswordLevel"
+    }, {
+      path: "/AuthManage/PasswordRegular",
+      component: _348e2d09,
+      name: "AuthManage-PasswordRegular"
+    }, {
+      path: "/AuthManage/RoleManage",
+      component: _4cad5623,
+      name: "AuthManage-RoleManage"
+    }, {
+      path: "/AuthManage/SystemInfo",
+      component: _17fe71b6,
+      name: "AuthManage-SystemInfo"
+    }, {
+      path: "/AuthManage/UserManage",
+      component: _06145b38,
+      name: "AuthManage-UserManage"
+    }, {
+      path: "/authManagement/userManagement",
+      component: _06e11ef8,
+      name: "authManagement-userManagement"
+    }, {
+      path: "/Basedate/DistrictMgr",
+      component: _92d255f8,
+      name: "Basedate-DistrictMgr"
+    }, {
+      path: "/Basedate/OrgMgr",
+      component: _0f61fc2a,
+      name: "Basedate-OrgMgr"
+    }, {
+      path: "/CacheManagement/CacheInfo",
+      component: _6941edec,
+      name: "CacheManagement-CacheInfo"
+    }, {
+      path: "/CacheManagement/CacheInit",
+      component: _6ea6ed4e,
+      name: "CacheManagement-CacheInit"
+    }, {
+      path: "/electricalPanel/ElectricalPanel",
+      component: _7231a6e2,
+      name: "electricalPanel-ElectricalPanel"
+    }, {
+      path: "/examples/use-markdown-editor",
+      component: _ef0c242e,
+      name: "examples-use-markdown-editor"
+    }, {
+      path: "/examples/vue-echarts",
+      component: _1a30da52,
+      name: "examples-vue-echarts"
+    }, {
+      path: "/examples/vue-Font-Awesome",
+      component: _6bc5a050,
+      name: "examples-vue-Font-Awesome"
+    }, {
+      path: "/examples/vue-photo-preview",
+      component: _095b67ca,
+      name: "examples-vue-photo-preview"
+    }, {
+      path: "/examples/vue-swiper",
+      component: _19d55a2b,
+      name: "examples-vue-swiper"
+    }, {
+      path: "/Group/ElMap",
+      component: _43ed312a,
+      name: "Group-ElMap"
+    }, {
+      path: "/LogManage/AuditConfig",
+      component: _0343acfd,
+      name: "LogManage-AuditConfig"
+    }, {
+      path: "/LogManage/LogManage",
+      component: _33abefc9,
+      name: "LogManage-LogManage"
+    }, {
+      path: "/LogManage/LogManage - 副本",
+      component: _2515f8d2,
+      name: "LogManage-LogManage - 副本"
+    }, {
+      path: "/MaintenanceService/EmergencyService",
+      component: _56adee37,
+      name: "MaintenanceService-EmergencyService"
+    }, {
+      path: "/MaintenanceService/MaintenanceRelation",
+      component: _d150eca8,
+      name: "MaintenanceService-MaintenanceRelation"
+    }, {
+      path: "/MaintenanceService/MaintenanceRelationship",
+      component: _a1978830,
+      name: "MaintenanceService-MaintenanceRelationship"
+    }, {
+      path: "/MaintenanceService/RoutineService",
+      component: _b7acd038,
+      name: "MaintenanceService-RoutineService"
+    }, {
+      path: "/MessManage/MaintContract",
+      component: _05904236,
+      name: "MessManage-MaintContract"
+    }, {
+      path: "/MessManage/MonitReports",
+      component: _7e9c7740,
+      name: "MessManage-MonitReports"
+    }, {
+      path: "/MessManage/PlanManage",
+      component: _d6ee1274,
+      name: "MessManage-PlanManage"
+    }, {
+      path: "/MessManage/PriseInfo",
+      component: _bfa7c542,
+      name: "MessManage-PriseInfo"
+    }, {
+      path: "/MessManage/RiskReports",
+      component: _a7175d70,
+      name: "MessManage-RiskReports"
+    }, {
+      path: "/MessManage/SafetyManage",
+      component: _6cf57b2f,
+      name: "MessManage-SafetyManage"
+    }, {
+      path: "/MessManage/Training",
+      component: _4d31a7b2,
+      name: "MessManage-Training"
+    }, {
+      path: "/MessManage/YearPlan",
+      component: _76f7c9de,
+      name: "MessManage-YearPlan"
+    }, {
+      path: "/operationMonitor/monitorReport",
+      component: _565e4a08,
+      name: "operationMonitor-monitorReport"
+    }, {
+      path: "/operationMonitor/monitorReport2",
+      component: _753ba434,
+      name: "operationMonitor-monitorReport2"
+    }, {
+      path: "/PatrolPlan/addElectronic",
+      component: _51fe1d0d,
+      name: "PatrolPlan-addElectronic"
+    }, {
+      path: "/PatrolPlan/archivesList",
+      component: _71a7214f,
+      name: "PatrolPlan-archivesList"
+    }, {
+      path: "/PatrolPlan/ControlRoomDuty",
+      component: _50b7e984,
+      name: "PatrolPlan-ControlRoomDuty"
+    }, {
+      path: "/PatrolPlan/editAll",
+      component: _0e825747,
+      name: "PatrolPlan-editAll"
+    }, {
+      path: "/PatrolPlan/FacilitiesContent",
+      component: _4321d028,
+      name: "PatrolPlan-FacilitiesContent"
+    }, {
+      path: "/PatrolPlan/FacilitiesDetail",
+      component: _59b9ddf2,
+      name: "PatrolPlan-FacilitiesDetail"
+    }, {
+      path: "/PatrolPlan/FacilitiesInspection",
+      component: _31269d15,
+      name: "PatrolPlan-FacilitiesInspection"
+    }, {
+      path: "/PatrolPlan/PatrolContent",
+      component: _26c6bf7d,
+      name: "PatrolPlan-PatrolContent"
+    }, {
+      path: "/PatrolPlan/PatrolInspection",
+      component: _67cdf1a0,
+      name: "PatrolPlan-PatrolInspection"
+    }, {
+      path: "/PatrolPlan/punctuation",
+      component: _5cbffbea,
+      name: "PatrolPlan-punctuation"
+    }, {
+      path: "/PatrolPlan/taskList",
+      component: _9ac0e23a,
+      name: "PatrolPlan-taskList"
+    }, {
+      path: "/PatrolPlan/upload",
+      component: _5173bfbe,
+      name: "PatrolPlan-upload"
+    }, {
+      path: "/PatrolPlan/uploadFinishFile",
+      component: _839e4ba0,
+      name: "PatrolPlan-uploadFinishFile"
+    }, {
+      path: "/SafetySupervision/AlarmCheck",
+      component: _399c4f3f,
+      name: "SafetySupervision-AlarmCheck"
+    }, {
+      path: "/SafetySupervision/ControlRoomDuty",
+      component: _41648d76,
+      name: "SafetySupervision-ControlRoomDuty"
+    }, {
+      path: "/SafetySupervision/ElectricalFireWarning",
+      component: _631bfff4,
+      name: "SafetySupervision-ElectricalFireWarning"
+    }, {
+      path: "/SafetySupervision/FacilitiesInspection",
+      component: _14f6bddd,
+      name: "SafetySupervision-FacilitiesInspection"
+    }, {
+      path: "/SafetySupervision/FirePreventionInspection",
+      component: _4db570a2,
+      name: "SafetySupervision-FirePreventionInspection"
+    }, {
+      path: "/SafetySupervision/FirePreventionPatrol",
+      component: _7699147a,
+      name: "SafetySupervision-FirePreventionPatrol"
+    }, {
+      path: "/SafetySupervision/HiddenDangerRectification",
+      component: _2aea28b5,
+      name: "SafetySupervision-HiddenDangerRectification"
+    }, {
+      path: "/StatisticalQuery/HiddenStatistics",
+      component: _34020696,
+      name: "StatisticalQuery-HiddenStatistics"
+    }, {
+      path: "/StatisticalQuery/PoliceStatistics",
+      component: _7ddc2dae,
+      name: "StatisticalQuery-PoliceStatistics"
+    }, {
+      path: "/StatisticalQuery/PreWarningStatistics",
+      component: _6bf6d844,
+      name: "StatisticalQuery-PreWarningStatistics"
+    }, {
+      path: "/StatisticalQuery/SafetyStatistics",
+      component: _5a6757dd,
+      name: "StatisticalQuery-SafetyStatistics"
+    }, {
+      path: "/SystemManagement/OrgMgr",
+      component: _0d720a77,
+      name: "SystemManagement-OrgMgr"
+    }, {
+      path: "/SystemManagement/UserManagement",
+      component: _badf9bd8,
+      name: "SystemManagement-UserManagement"
+    }, {
+      path: "/authManagement/chart/list",
+      component: _4922c539,
+      name: "authManagement-chart-list"
+    }, {
+      path: "/authManagement/component/list",
+      component: _46d589fa,
+      name: "authManagement-component-list"
+    }, {
+      path: "/authManagement/component/son",
+      component: _3c5be8e6,
+      name: "authManagement-component-son"
+    }, {
+      path: "/authManagement/organization/add",
+      component: _1ab64b62,
+      name: "authManagement-organization-add"
+    }, {
+      path: "/authManagement/organization/edit",
+      component: _0dbd16cc,
+      name: "authManagement-organization-edit"
+    }, {
+      path: "/authManagement/organization/list",
+      component: _03162140,
+      name: "authManagement-organization-list"
+    }, {
+      path: "/authManagement/organization/orgAdd",
+      component: _3ad6fbdf,
+      name: "authManagement-organization-orgAdd"
+    }, {
+      path: "/authManagement/organization/orgEdit",
+      component: _6861b188,
+      name: "authManagement-organization-orgEdit"
+    }, {
+      path: "/authManagement/user/add",
+      component: _693352e7,
+      name: "authManagement-user-add"
+    }, {
+      path: "/authManagement/user/edit",
+      component: _68fdb134,
+      name: "authManagement-user-edit"
+    }, {
+      path: "/authManagement/user/list",
+      component: _59b589c8,
+      name: "authManagement-user-list"
+    }, {
+      path: "/authManagement/user/orgAdd",
+      component: _6f4ac772,
+      name: "authManagement-user-orgAdd"
+    }, {
+      path: "/authManagement/user/orgEdit",
+      component: _2280d858,
+      name: "authManagement-user-orgEdit"
+    }, {
+      path: "/MessManage/PriseInfoView/Edit",
+      component: _258eb4e5,
+      name: "MessManage-PriseInfoView-Edit"
+    }, {
+      path: "/SystemManagement/UserManagement/LogoffUser",
+      component: _b2c15738,
+      name: "SystemManagement-UserManagement-LogoffUser"
+    }, {
+      path: "/SystemManagement/UserManagement/ModifyUser",
+      component: _15bf8b1a,
+      name: "SystemManagement-UserManagement-ModifyUser"
+    }, {
+      path: "/",
+      component: _0d9d8e50,
+      name: "index"
+    }],
+
+    fallback: false
+  })
+}
